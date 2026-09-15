@@ -78,13 +78,15 @@ progress through `webContents.send` events declared in the IPC contract.
   empty cue lists, Windows paths with spaces and accents).
 - `main/services`: tested with a mocked `process.ts` — never spawn real binaries in tests.
 - Renderer: Testing Library for behaviour-heavy components (TransformRect, PresetPanel).
-- Run `pnpm check` before committing. CI runs the same command.
+- Run `pnpm check` before committing. CI (`.github/workflows/ci.yml`) runs the same command on
+  `windows-latest`; the release workflow builds the exe on `v*` tags.
 
 ## Git
 
 - Conventional Commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`.
 - Never commit `resources/bin/`, `out/`, `dist/`, `release/`, `node_modules/`.
-- Small, focused commits; one milestone feature per PR.
+- Small, focused commits; one milestone feature per PR. Contributor-facing rules live in
+  `CONTRIBUTING.md`; add user-visible changes to `CHANGELOG.md` under **Unreleased**.
 
 ## Adding an IPC endpoint (checklist)
 

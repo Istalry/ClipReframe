@@ -1,19 +1,37 @@
 # ClipReframe
 
+[![CI](https://github.com/Istalry/ClipReframe/actions/workflows/ci.yml/badge.svg)](https://github.com/Istalry/ClipReframe/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Istalry/ClipReframe?display_name=tag)](https://github.com/Istalry/ClipReframe/releases/latest)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
 Turn a 16:9 gameplay + webcam clip into a 1080×1920 vertical video for TikTok and YouTube Shorts.
+Everything runs offline on your PC — your videos never leave it.
 
 See **[HOW-TO-USE.md](HOW-TO-USE.md)** for the user guide (**[version française](HOW-TO-USE.fr.md)**).
+
+![ClipReframe main window](docs/screenshot.png)
 
 - Drag & drop a clip anywhere on the window, position the **webcam** and **gameplay** rectangles, watch the live 9:16 preview.
 - Two layouts: **Split** (webcam on top, gameplay below, adjustable ratio) and **Fill** (one 9:16 crop).
 - Save configurations, mark one as default (auto-applied on every new clip), delete the ones you no longer use.
-- Optional subtitles: offline speech-to-text (whisper.cpp `small` model, French by default), automatic clean-up
+- Optional subtitles: offline speech-to-text (whisper.cpp `small` model, language auto-detected or fixed), automatic clean-up
   of Whisper hallucinations, editable cues, fully styled (font, size, colours, outline, box, position) and burned in.
 - Multi-track recordings (OBS mic / Discord / game): pick which tracks feed the subtitles and which are mixed into the export.
 - Optional call-to-action outro (drop or pick a vertical video) appended to every export.
 - Export: single MP4 — H.264 High, CRF 17 / preset slow, yuv420p, AAC 48 kHz, `+faststart` — valid for both platforms.
 
 Ships as a single portable Windows `.exe`; nothing to install.
+
+## Download
+
+Grab `ClipReframe-<version>-portable.exe` from the
+[latest release](https://github.com/Istalry/ClipReframe/releases/latest) and run it. On first launch
+it extracts its bundled ffmpeg / whisper runtime into a `ClipReframe/` folder next to the exe
+(kept between runs).
+
+The executable is **not code-signed** (certificates cost money), so Windows SmartScreen shows
+"Windows protected your PC" the first time: click **More info → Run anyway**. You can verify what
+you run by building it yourself with `build.bat` — the release workflow does exactly that.
 
 ## Requirements
 
@@ -77,6 +95,16 @@ resources/     app icon; resources/bin/ holds the downloaded binaries (git-ignor
 
 `%APPDATA%\ClipReframe\presets.json`. A corrupt file is backed up next to it and reset.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports and feature requests go through
+[GitHub issues](https://github.com/Istalry/ClipReframe/issues); security reports through
+[SECURITY.md](SECURITY.md).
+
 ## Licence
 
-MIT. FFmpeg (GPL build from BtbN) and whisper.cpp (MIT) are redistributed as separate executables.
+ClipReframe is released under the [MIT licence](LICENSE).
+
+The portable executable also bundles third-party software with its own licences — notably a
+**GPL v3** FFmpeg build (BtbN) and whisper.cpp (MIT), run as separate processes. See
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the full list, versions and source links.

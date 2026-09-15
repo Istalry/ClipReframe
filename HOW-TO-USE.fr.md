@@ -75,7 +75,7 @@ transférer sur un autre PC.
 ## 4. Sous-titres (optionnel)
 
 1. Activez **Subtitles**.
-2. Choisissez la **langue parlée** (français par défaut ; `Auto-detect` fonctionne aussi).
+2. Choisissez la **langue parlée** (`Auto-detect` par défaut ; fixer la langue est plus fiable sur les clips courts).
 3. Cliquez sur **Generate subtitles**. La reconnaissance vocale tourne en local (rien n'est envoyé
    sur Internet). Comptez environ la moitié de la durée du clip sur un processeur récent.
 4. Une passe de nettoyage supprime les artefacts courants (mots répétés, marqueurs du type

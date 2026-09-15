@@ -69,7 +69,7 @@ Presets live in `%APPDATA%\ClipReframe\presets.json`; copy that file to move the
 ## 4. Subtitles (optional)
 
 1. Turn on **Subtitles**.
-2. Pick the **spoken language** (French by default; `Auto-detect` also works).
+2. Pick the **spoken language** (`Auto-detect` by default; fixing the language is more reliable on short clips).
 3. Click **Generate subtitles**. Speech recognition runs locally (nothing is uploaded). Expect
    roughly half the clip's duration on a modern CPU.
 4. A clean-up pass removes common recognition artefacts (repeated words, `[Musique]`-style
