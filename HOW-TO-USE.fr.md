@@ -5,8 +5,8 @@
 ClipReframe transforme un clip de stream 16:9 (gameplay + webcam) en vidéo verticale 1080×1920
 prête pour TikTok et YouTube Shorts. Rien à installer : lancez `ClipReframe-<version>-portable.exe`.
 
-> Le premier lancement prend ~20 s, le temps que l'application se décompresse à côté de l'exe
-> (dossier `ClipReframe/`). Les lancements suivants sont instantanés. Vous pouvez supprimer ce
+> Le premier lancement prend ~20 s, le temps que l'application se décompresse dans
+> `%TEMP%\ClipReframe`. Les lancements suivants sont instantanés. Vous pouvez supprimer ce
 > dossier à tout moment, il sera recréé.
 
 ## 1. Ouvrir un clip
@@ -111,7 +111,8 @@ TikTok et YouTube Shorts.
 
 | Symptôme                                                  | Cause / solution                                                                                                                 |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Bandeau rouge « Missing runtime files »                   | Le dossier `ClipReframe/resources/bin` à côté de l'exe a été supprimé — relancez l'exe.                                          |
+| Bandeau rouge « Missing runtime files »                   | Le dossier `%TEMP%\ClipReframe                                                                                                   |
+| esourcesin` a été supprimé — relancez l'exe.              |
 | La vidéo se charge mais reste noire / ne se lit pas       | Codec non pris en charge par Chromium (certains HEVC / 10 bits). Réencodez d'abord en H.264.                                     |
 | « Outro video not found » après application d'un preset   | Le fichier de l'outro a été déplacé. Sélectionnez-le à nouveau.                                                                  |
 | Sous-titres dans la mauvaise langue                       | Réglez la langue parlée avant de générer ; `Auto-detect` peut se tromper sur les clips courts.                                   |

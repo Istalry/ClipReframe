@@ -26,8 +26,8 @@ Ships as a single portable Windows `.exe`; nothing to install.
 
 Grab `ClipReframe-<version>-portable.exe` from the
 [latest release](https://github.com/Istalry/ClipReframe/releases/latest) and run it. On first launch
-it extracts its bundled ffmpeg / whisper runtime into a `ClipReframe/` folder next to the exe
-(kept between runs).
+it extracts its bundled ffmpeg / whisper runtime into `%TEMP%\ClipReframe` (kept between runs,
+safe to delete).
 
 The executable is **not code-signed** (certificates cost money), so Windows SmartScreen shows
 "Windows protected your PC" the first time: click **More info → Run anyway**. You can verify what
@@ -63,8 +63,8 @@ pnpm dist          # or double-click build.bat (installs, fetches binaries, runs
 `build.bat --skip-check` skips lint/typecheck/tests.
 
 Produces `release/ClipReframe-<version>-portable.exe` (~600 MB with the `small` model). Copy that one
-file anywhere and run it. The bundled binaries are extracted next to it on first launch (`ClipReframe/`
-folder, kept between runs).
+file anywhere and run it. The bundled binaries are extracted into `%TEMP%\ClipReframe` on first
+launch (kept between runs).
 
 ## Limitations
 

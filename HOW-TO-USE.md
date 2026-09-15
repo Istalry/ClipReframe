@@ -5,7 +5,7 @@
 ClipReframe turns a 16:9 stream clip (gameplay + webcam) into a 1080×1920 vertical video ready for
 TikTok and YouTube Shorts. No install: run `ClipReframe-<version>-portable.exe`.
 
-> First launch takes ~20 s while the app unpacks itself next to the exe (folder `ClipReframe/`).
+> First launch takes ~20 s while the app unpacks itself into `%TEMP%\ClipReframe`.
 > Later launches are instant. You can delete that folder at any time; it is recreated.
 
 ## 1. Open a clip
@@ -103,7 +103,8 @@ Output: 1080×1920, H.264 High profile, CRF 17 (visually lossless), yuv420p, sou
 
 | Symptom                                                     | Cause / fix                                                                                                              |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Red banner "Missing runtime files"                          | The `ClipReframe/resources/bin` folder next to the exe was deleted — relaunch the exe.                                   |
+| Red banner "Missing runtime files"                          | The `%TEMP%\ClipReframe                                                                                                  |
+| esourcesin` folder was deleted — relaunch the exe.          |
 | Video loads but shows black / won't play                    | Codec unsupported by Chromium (e.g. some HEVC/10-bit). Re-encode to H.264 first.                                         |
 | "Outro video not found" after applying a preset             | The outro file moved. Pick it again.                                                                                     |
 | Subtitles in the wrong language                             | Set the spoken language before generating; `Auto-detect` can misfire on short clips.                                     |
