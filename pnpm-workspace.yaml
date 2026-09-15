@@ -1,0 +1,9 @@
+# pnpm build-script allowlist. `electron` must run its postinstall to download the runtime binary.
+allowBuilds:
+  electron: true
+  esbuild: true
+  unrs-resolver: true
+  electron-winstaller: false
+minimumReleaseAgeExclude:
+  - eslint-plugin-react-refresh@0.5.7
+  - lucide-react@1.46.0

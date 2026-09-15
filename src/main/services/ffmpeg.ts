@@ -1,0 +1,85 @@
+import { rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { AppError } from '@shared/errors';
+import {
+  buildExportArgs,
+  parseProgressBlock,
+  totalOutputDuration,
+} from '@shared/export/filtergraph';
+import { buildAss } from '@shared/subtitles/ass';
+import type { ExportProgress, ExportRequest } from '@shared/types';
+
+import { getBinaryPath, getSystemFontsDir } from '../binaries';
+
+import { run } from './process';
+import { createTempDir } from './temp';
+
+export interface ExportJobOptions {
+  jobId: string;
+  request: ExportRequest;
+  signal: AbortSignal;
+  onProgress: (progress: ExportProgress) => void;
+}
+
+const SUBTITLES_FILE = 'subs.ass';
+
+/** Runs one export end to end. Throws `AppError` with EXPORT_FAILED / EXPORT_CANCELLED. */
+export async function runExport(options: ExportJobOptions): Promise<string> {
+  const { jobId, request, signal, onProgress } = options;
+  const temp = await createTempDir('export');
+
+  try {
+    const useSubtitles = request.settings.subtitles.enabled && request.cues.length > 0;
+    if (useSubtitles) {
+      const ass = buildAss(request.cues, request.settings.subtitles.style);
+      await writeFile(join(temp.path, SUBTITLES_FILE), ass, 'utf8');
+    }
+
+    const args = buildExportArgs({
+      source: request.source,
+      settings: request.settings,
+      outro: request.outro,
+      subtitlesFile: useSubtitles ? SUBTITLES_FILE : null,
+      fontsDir: getSystemFontsDir(),
+      outputPath: request.outputPath,
+    });
+
+    const total = Math.max(0.01, totalOutputDuration(request.source, request.outro));
+    let block: string[] = [];
+
+    await run(getBinaryPath('ffmpeg'), args, {
+      cwd: temp.path,
+      signal,
+      failureCode: 'EXPORT_FAILED',
+      cancelCode: 'EXPORT_CANCELLED',
+      onStdoutLine: (line) => {
+        block.push(line);
+        if (line.startsWith('progress=')) {
+          const parsed = parseProgressBlock(block.join('\n'));
+          block = [];
+          if (parsed) {
+            onProgress({
+              jobId,
+              fraction: Math.min(1, parsed.outTime / total),
+              outTime: parsed.outTime,
+              speed: parsed.speed,
+            });
+          }
+        }
+      },
+    });
+
+    onProgress({ jobId, fraction: 1, outTime: total, speed: '' });
+    return request.outputPath;
+  } catch (err) {
+    // Never leave a truncated MP4 behind.
+    await rm(request.outputPath, { force: true }).catch(() => undefined);
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError('EXPORT_FAILED', err instanceof Error ? err.message : String(err));
+  } finally {
+    await temp.dispose().catch(() => undefined);
+  }
+}

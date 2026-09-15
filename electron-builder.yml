@@ -1,0 +1,30 @@
+appId: com.j2studio.clipreframe
+productName: ClipReframe
+directories:
+  buildResources: resources
+  output: release
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+extraResources:
+  # Third-party binaries downloaded by `pnpm fetch-binaries`; kept outside the asar so they can be spawned.
+  - from: resources/bin
+    to: bin
+    filter:
+      - '**/*'
+asar: true
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: resources/icon.ico
+  artifactName: ${productName}-${version}-portable.${ext}
+portable:
+  # Keep the extracted app between runs so the 150 MB model is not re-extracted every launch.
+  unpackDirName: ClipReframe
+npmRebuild: false
+electronLanguages:
+  - en-US
+  - fr
