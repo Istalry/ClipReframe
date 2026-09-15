@@ -31,8 +31,12 @@ Track names come from the file's stream titles when the recorder wrote them. The
 (not saved in configurations) and is summarised in the Subtitles panel as
 "Audio: subtitles from tracks 1+2 · export 1+2+3"; click **change** to reopen the popup.
 Generating subtitles with no track ticked shows an error; exporting with no track ticked produces a
-silent video (the popup warns you). Single-track clips never show the popup. The in-app player only
-plays the file's default track; the export and the subtitles follow your selection.
+silent video (the popup warns you). Single-track clips never show the popup.
+
+For multi-track clips the player plays the **export mix** — the ticked export tracks summed
+exactly as the export will sum them — rather than the file's default track. The mix is rendered
+in the background right after loading (a small "mix…" spinner next to the mute button) and again
+whenever you change the selection; until it is ready the default track plays.
 
 ## 2. Frame the two rectangles
 

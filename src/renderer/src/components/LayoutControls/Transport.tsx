@@ -1,4 +1,4 @@
-import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { AudioLines, Loader2, Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { formatTime } from '../../lib/format';
@@ -14,6 +14,8 @@ export function Transport(): ReactNode {
   const togglePlay = usePlayerStore((s) => s.togglePlay);
   const toggleMute = usePlayerStore((s) => s.toggleMute);
   const seek = usePlayerStore((s) => s.seek);
+  const mixPath = usePlayerStore((s) => s.mixPath);
+  const mixPending = usePlayerStore((s) => s.mixPending);
 
   return (
     <div className="flex items-center gap-2">
@@ -31,6 +33,23 @@ export function Transport(): ReactNode {
         onClick={toggleMute}
         icon={muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
       />
+      {mixPending ? (
+        <span
+          className="text-muted flex items-center gap-1 text-xs"
+          title="Rendering the export mix"
+        >
+          <Loader2 size={12} className="animate-spin" /> mix…
+        </span>
+      ) : (
+        mixPath && (
+          <span
+            className="text-accent flex items-center gap-1 text-xs"
+            title="Playing the export audio mix (selected tracks)"
+          >
+            <AudioLines size={12} /> mix
+          </span>
+        )
+      )}
       <input
         type="range"
         aria-label="Seek"

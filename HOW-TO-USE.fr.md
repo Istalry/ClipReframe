@@ -35,8 +35,13 @@ est propre au clip (il n'est pas enregistré dans les configurations) et se rés
 Subtitles : « Audio: subtitles from tracks 1+2 · export 1+2+3 » ; cliquez sur **change** pour rouvrir
 la fenêtre. Générer des sous-titres sans aucune piste cochée affiche une erreur ; exporter sans piste
 cochée produit une vidéo muette (la fenêtre vous prévient). Les clips à une seule piste n'affichent
-jamais la fenêtre. Le lecteur intégré ne lit que la piste par défaut du fichier ; l'export et les
-sous-titres suivent votre sélection.
+jamais la fenêtre.
+
+Pour les clips multipistes, le lecteur joue le **mixage d'export** — les pistes cochées pour
+l'export, sommées exactement comme l'export le fera — plutôt que la piste par défaut du fichier.
+Le mixage est préparé en arrière-plan juste après le chargement (petit indicateur « mix… » à
+côté du bouton muet) et à chaque changement de sélection ; en attendant, la piste par défaut
+est jouée.
 
 ## 2. Cadrer les deux rectangles
 

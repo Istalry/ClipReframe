@@ -77,8 +77,6 @@ launch (kept between runs).
   will not preview (export still works). No proxy transcoding yet.
 - The whole clip is exported; no in-app trimming.
 - Subtitle preview is a CSS approximation of libass; the burned-in result can differ marginally.
-- The in-app player plays the file's default audio track only; the track selection applies to the
-  export and to speech recognition.
 
 ## Project layout
 

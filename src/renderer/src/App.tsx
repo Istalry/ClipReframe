@@ -15,6 +15,7 @@ import { Toasts } from './components/Toasts/Toasts';
 import { Button } from './components/ui/Button';
 import { VerticalPreview } from './components/VerticalPreview/VerticalPreview';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { usePreviewMix } from './hooks/usePreviewMix';
 import { useWindowFileDrop } from './hooks/useWindowFileDrop';
 import { useAppStore } from './store/app';
 import { usePresetStore } from './store/presets';
@@ -42,6 +43,7 @@ export function App(): ReactNode {
   const [missingBinaries, setMissingBinaries] = useState<string[]>([]);
 
   useKeyboardShortcuts();
+  usePreviewMix();
   const dragging = useWindowFileDrop();
 
   useEffect(() => {

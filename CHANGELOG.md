@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file. The format is b
 - GPU video encoding: NVIDIA NVENC, AMD AMF and Intel Quick Sync are probed at start-up and the
   first working one encodes the export (several times faster than x264 at a matching quality).
   A selector in the export bar forces the CPU; a GPU failure falls back to x264 automatically.
+- The player plays the export audio mix for multi-track clips (the ticked export tracks summed
+  like the export does) instead of the file's default track only.
 - Outro videos are copied into `%APPDATA%\ClipReframe\outros` when picked, so configurations
   keep working after the original file is moved or deleted; unreferenced copies are removed at
   start-up.

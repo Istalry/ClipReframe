@@ -2,6 +2,7 @@ import type { OutroLibrary } from '../services/outro-library';
 import type { PresetsStore } from '../services/presets-store';
 
 import { registerAppHandlers } from './app';
+import { registerAudioHandlers } from './audio';
 import { registerDialogHandlers } from './dialog';
 import { registerExportHandlers } from './export';
 import { registerFontHandlers } from './fonts';
@@ -19,4 +20,5 @@ export function registerIpcHandlers(presets: PresetsStore, outros: OutroLibrary)
   registerFontHandlers();
   registerSubtitleHandlers();
   registerExportHandlers();
+  registerAudioHandlers();
 }

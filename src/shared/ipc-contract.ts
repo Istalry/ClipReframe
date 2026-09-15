@@ -137,6 +137,20 @@ export const invokeContract = {
     response: z.void(),
   },
 
+  'audio:renderPreview': {
+    request: z.object({
+      jobId,
+      path: z.string(),
+      audioTracks: trackList,
+      duration: z.number().nonnegative(),
+    }),
+    response: z.object({ path: z.string() }),
+  },
+  'audio:cancelPreview': {
+    request: z.object({ jobId }),
+    response: z.void(),
+  },
+
   'export:start': {
     request: z.object({
       jobId,

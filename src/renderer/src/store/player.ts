@@ -10,8 +10,16 @@ export interface PlayerState {
   currentTime: number;
   duration: number;
   muted: boolean;
+  /**
+   * Rendered export mix played instead of the file's default track (multi-track clips only);
+   * null = play the <video> element's own audio.
+   */
+  mixPath: string | null;
+  /** True while ffmpeg renders the mix; the video's own audio plays meanwhile. */
+  mixPending: boolean;
 
   register: (element: HTMLVideoElement | null) => void;
+  setMix: (mixPath: string | null, pending?: boolean) => void;
   setPlaying: (playing: boolean) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
@@ -26,9 +34,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTime: 0,
   duration: 0,
   muted: false,
+  mixPath: null,
+  mixPending: false,
 
   register: (element) => {
     set({ element, playing: false, currentTime: 0, duration: element?.duration ?? 0 });
+  },
+  setMix: (mixPath, pending = false) => {
+    set({ mixPath, mixPending: pending });
   },
   setPlaying: (playing) => {
     set({ playing });

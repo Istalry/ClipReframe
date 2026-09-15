@@ -17,6 +17,7 @@ const MIME: Record<string, string> = {
   '.mov': 'video/quicktime',
   '.mkv': 'video/x-matroska',
   '.webm': 'video/webm',
+  '.m4a': 'audio/mp4',
 };
 
 /** Must run before `app.whenReady()`. */

@@ -10,6 +10,7 @@ import { detectHardwareEncoders } from './services/encoders';
 import { jobs } from './services/jobs';
 import { OutroLibrary } from './services/outro-library';
 import { PresetsStore } from './services/presets-store';
+import { disposePreviewAudio } from './services/preview-audio';
 
 const log = createLogger('main');
 
@@ -89,6 +90,7 @@ void app.whenReady().then(() => {
 app.on('before-quit', () => {
   // Kill any ffmpeg/whisper still running so we never leave orphans behind.
   jobs.cancelAll();
+  void disposePreviewAudio();
 });
 
 app.on('window-all-closed', () => {

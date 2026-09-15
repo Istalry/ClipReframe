@@ -5,6 +5,7 @@ import { toMediaUrl } from '@shared/media-url';
 import type { VideoInfo } from '@shared/types';
 
 import { useFitAspect } from '../../hooks/useFitAspect';
+import { useMixSync } from '../../hooks/useMixSync';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
 
@@ -19,6 +20,7 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mixRef = useRef<HTMLAudioElement>(null);
   const fitted = useFitAspect(containerRef, source.width / source.height);
 
   const settings = useProjectStore((s) => s.settings);
@@ -31,6 +33,8 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
   const setCurrentTime = usePlayerStore((s) => s.setCurrentTime);
   const setDuration = usePlayerStore((s) => s.setDuration);
   const muted = usePlayerStore((s) => s.muted);
+  const mixPath = usePlayerStore((s) => s.mixPath);
+  useMixSync(videoRef, mixRef, mixPath !== null);
 
   useEffect(() => {
     register(videoRef.current);
@@ -68,7 +72,8 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
           ref={videoRef}
           src={toMediaUrl(source.path)}
           className="block h-full w-full"
-          muted={muted}
+          // With a rendered mix the <audio> below carries the sound, not the file's default track.
+          muted={muted || mixPath !== null}
           playsInline
           // Decode the first frame right away so the vertical preview is not black before play.
           preload="auto"
@@ -88,6 +93,7 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
             setPlaying(false);
           }}
         />
+        {mixPath && <audio ref={mixRef} src={toMediaUrl(mixPath)} muted={muted} preload="auto" />}
         <div className="absolute inset-0">
           {settings.layout === 'split' && (
             <TransformRect
