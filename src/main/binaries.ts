@@ -22,7 +22,8 @@ export function getWhisperModelPath(): string | null {
   if (!existsSync(dir)) {
     return null;
   }
-  const preferred = ['ggml-small.bin', 'ggml-base.bin', 'ggml-tiny.bin'];
+  // Accuracy first: the fetch script ships `small` by default; larger models win if present.
+  const preferred = ['ggml-medium.bin', 'ggml-small.bin', 'ggml-base.bin', 'ggml-tiny.bin'];
   const files = readdirSync(dir).filter((f) => /^ggml-.*\.bin$/i.test(f));
   const pick = preferred.find((p) => files.includes(p)) ?? files[0];
   return pick ? join(dir, pick) : null;

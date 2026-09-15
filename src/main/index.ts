@@ -36,6 +36,11 @@ function createWindow(): BrowserWindow {
     win.show();
   });
 
+  // A dropped file must never navigate the window away from the app.
+  win.webContents.on('will-navigate', (event) => {
+    event.preventDefault();
+  });
+
   // Any external link opens in the default browser, never inside the app.
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);

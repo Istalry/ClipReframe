@@ -1,0 +1,91 @@
+# How to use ClipReframe
+
+ClipReframe turns a 16:9 stream clip (gameplay + webcam) into a 1080×1920 vertical video ready for
+TikTok and YouTube Shorts. No install: run `ClipReframe-<version>-portable.exe`.
+
+> First launch takes ~20 s while the app unpacks itself next to the exe (folder `ClipReframe/`).
+> Later launches are instant. You can delete that folder at any time; it is recreated.
+
+## 1. Open a clip
+
+- **Drag & drop** a video anywhere onto the window, or click **Browse…**.
+- Supported: `.mp4`, `.mov`, `.mkv`, `.webm`, `.m4v`. Any resolution works; 16:9 is what the layout
+  is designed for (you get a notice for other aspect ratios).
+- Dropping another file while a clip is open **replaces** the clip (a purple "Drop to replace"
+  overlay confirms it). The right-hand panel is excluded from that overlay so you can still drop
+  an outro there.
+
+## 2. Frame the two rectangles
+
+The centre shows your source; the right shows the vertical result live.
+
+| Rectangle    | Goes to                | Colour |
+| ------------ | ---------------------- | ------ |
+| **Webcam**   | top of the vertical    | cyan   |
+| **Gameplay** | bottom of the vertical | pink   |
+
+- Drag inside a rectangle to move it. Drag a handle to resize (the aspect ratio is locked so the
+  crop always fills its band without distortion).
+- Click a rectangle to select it; a rule-of-thirds grid appears.
+- **Webcam height** slider — or drag the purple line in the preview — changes how much of the
+  vertical frame the webcam gets (20 %–60 %). The rectangles re-fit automatically.
+- **Layout → Fill** switches to a single 9:16 crop of the gameplay (no webcam band).
+
+Playback: **Space** play/pause · **← / →** ±1 s (**Shift** = ±5 s) · **M** mute · drag the scrub bar.
+
+## 3. Configurations (presets)
+
+Left sidebar. A configuration stores the layout, both rectangles, the split ratio, the subtitle
+settings/style and the outro.
+
+- **New** → name it → **Save**: stores the current settings.
+- Click a configuration to **apply** it to the current clip.
+- **★** marks the **default**: it is applied automatically every time you open a new clip.
+- Change something after applying and an **Update "name"** button appears; the row shows a **●**
+  while you have unsaved changes.
+- **🗑** deletes (asks for confirmation).
+
+Presets live in `%APPDATA%\ClipReframe\presets.json`; copy that file to move them to another PC.
+
+## 4. Subtitles (optional)
+
+1. Turn on **Subtitles**.
+2. Pick the **spoken language** (French by default; `Auto-detect` also works).
+3. Click **Generate subtitles**. Speech recognition runs locally (nothing is uploaded). Expect
+   roughly half the clip's duration on a modern CPU.
+4. A clean-up pass removes common recognition artefacts (repeated words, `[Musique]`-style
+   markers, looped phrases) — the toast tells you how many were removed.
+5. Edit any cue: text, start/end (seconds). Click into a cue to jump the player there; the active
+   cue is highlighted while playing. The **🗑** on a row deletes it.
+6. **Style**: font (all installed fonts), size, bold/italic/caps, colour, outline or background
+   box, shadow, position (bottom / centre / top) and margin, max characters per line (auto-wrap).
+   The preview on the right shows the result live.
+
+Subtitles are **burned into** the video (they are part of the picture), which is what TikTok and
+Shorts need for autoplay-without-sound.
+
+## 5. Outro / call to action (optional)
+
+Drop a vertical video onto the **Outro** panel or click **Choose outro…**. It is appended
+unchanged after the clip. If it is not 9:16 it is letterboxed, never stretched. Subtitles never
+appear on the outro. The outro is saved in the configuration, so a "Shorts" preset can carry its
+own end card.
+
+## 6. Export
+
+Click **Export**, choose a folder. The file is named `<clip>_vertical.mp4` (the folder is
+remembered). A progress bar shows speed; **Cancel** stops and removes the partial file. When done
+the path in the bottom bar opens the folder.
+
+Output: 1080×1920, H.264 High profile, CRF 17 (visually lossless), yuv420p, source frame rate
+(capped at 60), AAC 192 kbps 48 kHz, `faststart` — accepted as-is by TikTok and YouTube Shorts.
+
+## Troubleshooting
+
+| Symptom                                                     | Cause / fix                                                                                                              |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Red banner "Missing runtime files"                          | The `ClipReframe/resources/bin` folder next to the exe was deleted — relaunch the exe.                                   |
+| Video loads but shows black / won't play                    | Codec unsupported by Chromium (e.g. some HEVC/10-bit). Re-encode to H.264 first.                                         |
+| "Outro video not found" after applying a preset             | The outro file moved. Pick it again.                                                                                     |
+| Subtitles in the wrong language                             | Set the spoken language before generating; `Auto-detect` can misfire on short clips.                                     |
+| Exported subtitles look slightly different from the preview | The preview is a CSS approximation of the renderer; sizes and positions match, outline rasterisation differs marginally. |

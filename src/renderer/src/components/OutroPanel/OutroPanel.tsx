@@ -1,9 +1,11 @@
 import { AlertTriangle, Clapperboard, X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState } from 'react';
+import type { DragEvent, ReactNode } from 'react';
 
 import { OUTPUT_ASPECT } from '@shared/constants';
 
-import { invoke } from '../../api';
+import { getPathForFile, invoke } from '../../api';
+import { isSupportedVideoName, OWN_DROP_TARGET_ATTR } from '../../hooks/useWindowFileDrop';
 import { formatTime } from '../../lib/format';
 import { useProjectStore } from '../../store/project';
 import { toastError } from '../../store/toasts';
@@ -16,6 +18,17 @@ export function OutroPanel(): ReactNode {
   const info = useProjectStore((s) => s.outroInfo);
   const missing = useProjectStore((s) => s.outroMissing);
   const setOutro = useProjectStore((s) => s.setOutro);
+  const [over, setOver] = useState(false);
+
+  // Own the drop here so the window-level handler does not treat it as a new source clip.
+  const onDrop = (e: DragEvent): void => {
+    e.preventDefault();
+    setOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && isSupportedVideoName(file.name)) {
+      void setOutro(getPathForFile(file));
+    }
+  };
 
   const pick = async (): Promise<void> => {
     try {
@@ -33,7 +46,18 @@ export function OutroPanel(): ReactNode {
   const notVertical = info !== null && Math.abs(info.width / info.height - OUTPUT_ASPECT) > 0.02;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div
+      {...{ [OWN_DROP_TARGET_ATTR]: true }}
+      className={`flex flex-col gap-2 rounded-md transition-colors ${over ? 'bg-accent/15 outline-accent outline-2 outline-dashed' : ''}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => {
+        setOver(false);
+      }}
+      onDrop={onDrop}
+    >
       <SectionTitle>Outro (call to action)</SectionTitle>
       {outro ? (
         <div className="bg-panel-2 flex flex-col gap-1 rounded-md p-2 text-xs">
@@ -71,7 +95,9 @@ export function OutroPanel(): ReactNode {
           )}
         </div>
       ) : (
-        <p className="text-muted text-xs">Append a vertical video at the end of every export.</p>
+        <p className="text-muted text-xs">
+          Append a vertical video at the end of every export. Drop a file here or choose one.
+        </p>
       )}
       <Button
         onClick={() => {

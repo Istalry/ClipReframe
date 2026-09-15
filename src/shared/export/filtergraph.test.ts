@@ -118,7 +118,7 @@ describe('buildExportArgs', () => {
     expect(args.filter((a) => a === '-i')).toHaveLength(2);
     expect(args[args.indexOf('-i') + 1]).toBe(source.path);
     expect(args).toEqual(
-      expect.arrayContaining(['libx264', '-crf', '18', 'high', 'yuv420p', 'aac', '+faststart']),
+      expect.arrayContaining(['libx264', '-crf', '17', 'high', 'yuv420p', 'aac', '+faststart']),
     );
     expect(args[args.length - 1]).toBe('D:\\out\\my clip_vertical.mp4');
   });

@@ -14,6 +14,7 @@ import { Toasts } from './components/Toasts/Toasts';
 import { Button } from './components/ui/Button';
 import { VerticalPreview } from './components/VerticalPreview/VerticalPreview';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useWindowFileDrop } from './hooks/useWindowFileDrop';
 import { usePresetStore } from './store/presets';
 import { useProjectStore } from './store/project';
 
@@ -34,6 +35,7 @@ export function App(): ReactNode {
   const [missingBinaries, setMissingBinaries] = useState<string[]>([]);
 
   useKeyboardShortcuts();
+  const dragging = useWindowFileDrop();
 
   useEffect(() => {
     void loadPresets();
@@ -96,7 +98,7 @@ export function App(): ReactNode {
               <Transport />
             </>
           ) : (
-            <DropZone />
+            <DropZone dragging={dragging} />
           )}
         </main>
 
@@ -109,6 +111,12 @@ export function App(): ReactNode {
 
       <ExportBar />
       <Toasts />
+      {dragging && source && (
+        // Covers everything except the right sidebar, so the outro panel stays a drop target.
+        <div className="bg-bg/70 border-accent pointer-events-none fixed inset-y-0 left-0 z-40 flex w-[calc(100%-20rem)] items-center justify-center border-4 border-dashed text-lg font-semibold">
+          Drop to replace the current clip
+        </div>
+      )}
     </div>
   );
 }

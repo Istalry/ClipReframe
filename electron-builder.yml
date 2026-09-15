@@ -22,7 +22,7 @@ win:
   icon: resources/icon.ico
   artifactName: ${productName}-${version}-portable.${ext}
 portable:
-  # Keep the extracted app between runs so the 150 MB model is not re-extracted every launch.
+  # Keep the extracted app between runs so the ~500 MB model is not re-extracted every launch.
   unpackDirName: ClipReframe
 npmRebuild: false
 electronLanguages:

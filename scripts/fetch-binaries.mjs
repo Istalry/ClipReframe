@@ -2,7 +2,7 @@
 // Windows-only (uses PowerShell Expand-Archive so we need no zip dependency).
 //
 // Usage:  node scripts/fetch-binaries.mjs [--force]
-// Env:    WHISPER_MODEL=base|small|medium   (default: base)
+// Env:    WHISPER_MODEL=tiny|base|small|medium   (default: small)
 //         FFMPEG_TAG=latest|autobuild-YYYY-MM-DD-HH-MM   (default: latest)
 
 import { execFile } from 'node:child_process';
@@ -20,7 +20,7 @@ const execFileAsync = promisify(execFile);
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const BIN_DIR = join(ROOT, 'resources', 'bin');
 const FORCE = process.argv.includes('--force');
-const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'base';
+const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'small';
 const FFMPEG_TAG = process.env.FFMPEG_TAG ?? 'latest';
 const WHISPER_TAG = 'b5130';
 
