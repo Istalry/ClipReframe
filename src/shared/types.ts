@@ -123,6 +123,12 @@ export interface Preset {
   updatedAt: string;
 }
 
+/** Portion of the source clip to export, in seconds. Per clip, never stored in presets. */
+export interface TrimRange {
+  start: number;
+  end: number;
+}
+
 /** Everything needed to produce one export. A preset is exactly this plus identity fields. */
 export type ProjectSettings = Pick<
   Preset,
@@ -137,6 +143,7 @@ export interface ExportRequest {
   audio: AudioSelection;
   outputPath: string;
   encoder: VideoEncoder;
+  trim: TrimRange | null;
 }
 
 export interface ExportProgress {

@@ -165,13 +165,28 @@ describe('buildExportArgs', () => {
       expect.arrayContaining(['libx264', '-crf', '17', 'high', 'yuv420p', 'aac', '+faststart']),
     );
     expect(args[args.length - 1]).toBe('D:\\out\\my clip_vertical.mp4');
+    expect(args).not.toContain('-ss');
+  });
+
+  it('seeks the source on the input side when trimmed and sizes the silence to match', () => {
+    const args = buildExportArgs({
+      ...base(),
+      trim: { start: 3.5, end: 10 },
+      audio: { transcribeTracks: [], exportTracks: [] },
+    });
+    const i = args.indexOf('-i');
+    expect(args.slice(i - 4, i + 2)).toEqual(['-ss', '3.500', '-to', '10', '-i', source.path]);
+    expect(args[args.indexOf('-filter_complex') + 1]).toContain(
+      'anullsrc=r=48000:cl=stereo:d=6.500',
+    );
   });
 });
 
 describe('totalOutputDuration', () => {
-  it('sums source and outro', () => {
+  it('sums source and outro, honouring the trim', () => {
     expect(totalOutputDuration(source, null)).toBe(42);
     expect(totalOutputDuration(source, outro)).toBe(45);
+    expect(totalOutputDuration(source, outro, { start: 10, end: 20 })).toBe(13);
   });
 });
 

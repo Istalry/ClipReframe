@@ -37,6 +37,7 @@ const request = (overrides: Partial<ExportRequest> = {}): ExportRequest => ({
   audio: { transcribeTracks: [0], exportTracks: [0] },
   outputPath: join(tempRoot, 'out.mp4'),
   encoder: 'libx264',
+  trim: null,
   ...overrides,
 });
 
@@ -102,6 +103,30 @@ describe('runExport', () => {
       onProgress: () => undefined,
     });
     expect(run.mock.calls[0]![1].join(' ')).not.toContain('subtitles=');
+  });
+
+  it('shifts subtitles to the trim start and seeks the input', async () => {
+    run.mockResolvedValue({ stdout: '', stderr: '' });
+    const settings = createDefaultSettings();
+    settings.subtitles.enabled = true;
+    settings.subtitles.style.highlightMode = 'none';
+    await runExport({
+      jobId: 'j7',
+      request: request({
+        settings,
+        trim: { start: 4, end: 8 },
+        cues: [
+          { id: 'x', start: 1, end: 2, text: 'cut' },
+          { id: 'y', start: 5, end: 6, text: 'kept' },
+        ],
+      }),
+      signal: new AbortController().signal,
+      onProgress: () => undefined,
+    });
+    const ass = await readFile(join(tempRoot, 'subs.ass'), 'utf8');
+    expect(ass).toContain('Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,kept');
+    expect(ass).not.toContain('cut');
+    expect(run.mock.calls[0]![1]).toEqual(expect.arrayContaining(['-ss', '4', '-to', '8']));
   });
 
   it('falls back to x264 once when a GPU encoder fails, and reports it', async () => {

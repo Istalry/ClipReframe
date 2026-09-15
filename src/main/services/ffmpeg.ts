@@ -8,6 +8,7 @@ import {
   parseProgressBlock,
   totalOutputDuration,
 } from '@shared/export/filtergraph';
+import { applyTrimToCues } from '@shared/export/trim';
 import { buildAss } from '@shared/subtitles/ass';
 import type { ExportProgress, ExportRequest } from '@shared/types';
 
@@ -42,11 +43,14 @@ export async function runExport(options: ExportJobOptions): Promise<ExportResult
   try {
     const useSubtitles = request.settings.subtitles.enabled && request.cues.length > 0;
     if (useSubtitles) {
-      const ass = buildAss(request.cues, request.settings.subtitles.style);
+      const ass = buildAss(
+        applyTrimToCues(request.cues, request.trim),
+        request.settings.subtitles.style,
+      );
       await writeFile(join(temp.path, SUBTITLES_FILE), ass, 'utf8');
     }
 
-    const total = Math.max(0.01, totalOutputDuration(request.source, request.outro));
+    const total = Math.max(0.01, totalOutputDuration(request.source, request.outro, request.trim));
     const encode = async (encoder: VideoEncoder): Promise<void> => {
       const args = buildExportArgs({
         source: request.source,
@@ -57,6 +61,7 @@ export async function runExport(options: ExportJobOptions): Promise<ExportResult
         fontsDir: getSystemFontsDir(),
         outputPath: request.outputPath,
         encoder,
+        trim: request.trim,
       });
       let block: string[] = [];
       await run(getBinaryPath('ffmpeg'), args, {

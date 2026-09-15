@@ -27,6 +27,7 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
   const selectedRect = useProjectStore((s) => s.selectedRect);
   const setRect = useProjectStore((s) => s.setRect);
   const selectRect = useProjectStore((s) => s.selectRect);
+  const trim = useProjectStore((s) => s.trim);
 
   const register = usePlayerStore((s) => s.register);
   const setPlaying = usePlayerStore((s) => s.setPlaying);
@@ -84,7 +85,12 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
             setPlaying(false);
           }}
           onTimeUpdate={(e) => {
-            setCurrentTime(e.currentTarget.currentTime);
+            const video = e.currentTarget;
+            // Preview the trimmed clip as a loop, like the export will play it.
+            if (trim && !video.paused && video.currentTime >= trim.end) {
+              video.currentTime = trim.start;
+            }
+            setCurrentTime(video.currentTime);
           }}
           onLoadedMetadata={(e) => {
             setDuration(e.currentTarget.duration);

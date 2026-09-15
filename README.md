@@ -12,6 +12,7 @@ See **[HOW-TO-USE.md](HOW-TO-USE.md)** for the user guide (**[version française
 ![ClipReframe main window](docs/screenshot.png)
 
 - Drag & drop a clip anywhere on the window, position the **webcam** and **gameplay** rectangles, watch the live 9:16 preview.
+- Trim: set in/out points at the playhead (`I` / `O`); the preview loops inside the range and only that part is exported.
 - Two layouts: **Split** (webcam on top, gameplay below, adjustable ratio) and **Fill** (one 9:16 crop).
 - Save configurations, mark one as default (auto-applied on every new clip), delete the ones you no longer use.
 - Optional subtitles: offline speech-to-text (whisper.cpp `small` model, language auto-detected or fixed), automatic clean-up
@@ -75,7 +76,6 @@ launch (kept between runs).
   when available, x264 otherwise.
 - Preview playback relies on Chromium decoders: H.264 / VP9 / AV1 play; some HEVC or 10-bit sources
   will not preview (export still works). No proxy transcoding yet.
-- The whole clip is exported; no in-app trimming.
 - Subtitle preview is a CSS approximation of libass; the burned-in result can differ marginally.
 
 ## Project layout

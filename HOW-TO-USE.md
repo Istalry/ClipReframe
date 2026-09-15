@@ -56,6 +56,14 @@ The centre shows your source; the right shows the vertical result live.
 
 Playback: **Space** play/pause · **← / →** ±1 s (**Shift** = ±5 s) · **M** mute · drag the scrub bar.
 
+### Trim
+
+Only part of the clip needs to go out? Move the playhead and press **[** (or **I**) to set the
+start, **]** (or **O**) to set the end. The scrub bar shades what is left out, playback loops
+inside the range, and the export bar shows the trimmed length. The **×** next to the range
+exports the whole clip again. Subtitles are generated for the whole clip and follow the trim
+automatically; the trim is per clip and not part of a configuration.
+
 ## 3. Configurations (presets)
 
 Left sidebar. A configuration stores the layout, both rectangles, the split ratio, the subtitle

@@ -2,9 +2,10 @@ import { Cpu, Download, FolderOpen, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { VIDEO_ENCODER_LABELS } from '@shared/export/encoders';
+import { trimmedDuration } from '@shared/export/trim';
 
 import { invoke } from '../../api';
-import { defaultOutputName } from '../../lib/format';
+import { defaultOutputName, formatTime } from '../../lib/format';
 import { useAppStore, type EncoderPreference } from '../../store/app';
 import { useJobStore } from '../../store/jobs';
 import { useProjectStore } from '../../store/project';
@@ -33,6 +34,7 @@ function writeLastFolder(folder: string): void {
 export function ExportBar(): ReactNode {
   const source = useProjectStore((s) => s.source);
   const outroMissing = useProjectStore((s) => s.outroMissing);
+  const trim = useProjectStore((s) => s.trim);
   const job = useJobStore((s) => s.exportJob);
   const lastExportPath = useJobStore((s) => s.lastExportPath);
   const startExport = useJobStore((s) => s.startExport);
@@ -110,7 +112,7 @@ export function ExportBar(): ReactNode {
               </button>
             ) : (
               source &&
-              `1080×1920 · H.264 (${VIDEO_ENCODER_LABELS[encoder]}) · AAC — ready for TikTok and YouTube Shorts`
+              `${trim ? `Trimmed to ${formatTime(trimmedDuration(source.duration, trim))} · ` : ''}1080×1920 · H.264 (${VIDEO_ENCODER_LABELS[encoder]}) · AAC — ready for TikTok and YouTube Shorts`
             )}
           </div>
           {hardwareEncoders && hardwareEncoders.length > 0 && (

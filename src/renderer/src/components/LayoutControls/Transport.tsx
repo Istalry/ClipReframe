@@ -3,7 +3,10 @@ import type { ReactNode } from 'react';
 
 import { formatTime } from '../../lib/format';
 import { usePlayerStore } from '../../store/player';
+import { useProjectStore } from '../../store/project';
 import { Button } from '../ui/Button';
+
+import { TrimControls } from './TrimControls';
 
 /** Play / pause / mute / scrub for the shared video element. */
 export function Transport(): ReactNode {
@@ -16,6 +19,8 @@ export function Transport(): ReactNode {
   const seek = usePlayerStore((s) => s.seek);
   const mixPath = usePlayerStore((s) => s.mixPath);
   const mixPending = usePlayerStore((s) => s.mixPending);
+  const trim = useProjectStore((s) => s.trim);
+  const pct = (t: number): string => `${duration > 0 ? (t / duration) * 100 : 0}%`;
 
   return (
     <div className="flex items-center gap-2">
@@ -50,21 +55,37 @@ export function Transport(): ReactNode {
           </span>
         )
       )}
-      <input
-        type="range"
-        aria-label="Seek"
-        min={0}
-        max={duration || 0}
-        step={0.01}
-        value={Math.min(currentTime, duration || 0)}
-        onChange={(e) => {
-          seek(Number(e.target.value));
-        }}
-        className="w-full"
-      />
+      <div className="relative flex w-full items-center">
+        <input
+          type="range"
+          aria-label="Seek"
+          min={0}
+          max={duration || 0}
+          step={0.01}
+          value={Math.min(currentTime, duration || 0)}
+          onChange={(e) => {
+            seek(Number(e.target.value));
+          }}
+          className="w-full"
+        />
+        {trim && (
+          // Shade what the trim leaves out; the bar itself stays fully usable.
+          <>
+            <div
+              className="bg-bg/70 pointer-events-none absolute inset-y-0 left-0 rounded-l"
+              style={{ width: pct(trim.start) }}
+            />
+            <div
+              className="bg-bg/70 pointer-events-none absolute inset-y-0 right-0 rounded-r"
+              style={{ width: pct(duration - trim.end) }}
+            />
+          </>
+        )}
+      </div>
       <span className="text-muted w-24 shrink-0 text-right text-xs tabular-nums">
         {formatTime(currentTime)} / {formatTime(duration)}
       </span>
+      <TrimControls />
     </div>
   );
 }

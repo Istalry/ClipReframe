@@ -1,6 +1,7 @@
 ﻿import { create } from 'zustand';
 
 import { defaultAudioSelection } from '@shared/audio';
+import { clampTrim, isWholeClip } from '@shared/export/trim';
 import {
   clampSplitRatio,
   fitRectToAspect,
@@ -18,6 +19,7 @@ import type {
   SubtitleCue,
   SubtitleSettings,
   SubtitleStyle,
+  TrimRange,
   VideoInfo,
 } from '@shared/types';
 
@@ -45,6 +47,8 @@ export interface ProjectState {
   audio: AudioSelection;
   /** True while the track dialog should be shown (multi-track clip just loaded, or "change"). */
   pendingAudioChoice: boolean;
+  /** Portion of the clip to export; null = whole clip. Per clip, never part of a preset. */
+  trim: TrimRange | null;
 
   loadSource: (path: string) => Promise<void>;
   clearSource: () => void;
@@ -63,6 +67,10 @@ export interface ProjectState {
   setAudioSelection: (audio: AudioSelection) => void;
   openAudioChoice: () => void;
   dismissAudioChoice: () => void;
+  /** Set both bounds at once (null clears); a range covering the whole clip also clears. */
+  setTrim: (trim: TrimRange | null) => void;
+  setTrimStart: (time: number) => void;
+  setTrimEnd: (time: number) => void;
 }
 
 const NO_AUDIO: AudioSelection = { transcribeTracks: [], exportTracks: [] };
@@ -122,6 +130,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     loadingSource: false,
     audio: NO_AUDIO,
     pendingAudioChoice: false,
+    trim: null,
 
     loadSource: async (path) => {
       set({ loadingSource: true });
@@ -134,6 +143,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           settings: refitRects(state.settings, info),
           audio: defaultAudioSelection(info),
           pendingAudioChoice: info.audioTracks.length > 1,
+          trim: null,
         }));
         if (Math.abs(info.width / info.height - 16 / 9) > 0.02) {
           useToastStore
@@ -158,6 +168,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         selectedRect: null,
         audio: NO_AUDIO,
         pendingAudioChoice: false,
+        trim: null,
       });
     },
 
@@ -255,6 +266,22 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
     dismissAudioChoice: () => {
       set({ pendingAudioChoice: false });
+    },
+
+    setTrim: (trim) => {
+      const duration = get().source?.duration ?? 0;
+      const clamped = trim ? clampTrim(trim, duration) : null;
+      set({ trim: isWholeClip(clamped, duration) ? null : clamped });
+    },
+
+    setTrimStart: (time) => {
+      const { trim, source } = get();
+      get().setTrim({ start: time, end: trim?.end ?? source?.duration ?? 0 });
+    },
+
+    setTrimEnd: (time) => {
+      const { trim } = get();
+      get().setTrim({ start: trim?.start ?? 0, end: time });
     },
   };
 });

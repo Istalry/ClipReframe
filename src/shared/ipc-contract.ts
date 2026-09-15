@@ -50,6 +50,9 @@ export const subtitleCueSchema = z.object({
 });
 
 const jobId = z.string().min(1);
+const trimRangeSchema = z
+  .object({ start: z.number().nonnegative(), end: z.number().nonnegative() })
+  .refine((t) => t.end > t.start, 'Trim end must be after its start');
 const videoEncoder = z.enum(VIDEO_ENCODERS);
 
 // ---------------------------------------------------------------------------------------------
@@ -161,6 +164,7 @@ export const invokeContract = {
       audio: audioSelectionSchema,
       outputPath: z.string(),
       encoder: videoEncoder,
+      trim: trimRangeSchema.nullable(),
     }),
     response: z.object({ outputPath: z.string(), encoder: videoEncoder }),
   },

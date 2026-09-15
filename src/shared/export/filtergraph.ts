@@ -1,9 +1,10 @@
 import { buildAudioMixFilter } from '../audio';
 import { MAX_OUTPUT_FPS, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '../constants';
 import { getOutputRegions, toPixelRect, type OutputRegion } from '../geometry/layout';
-import type { AudioSelection, PixelRect, ProjectSettings, VideoInfo } from '../types';
+import type { AudioSelection, PixelRect, ProjectSettings, TrimRange, VideoInfo } from '../types';
 
 import { encoderArgs, type VideoEncoder } from './encoders';
+import { trimmedDuration } from './trim';
 
 export interface ExportArgsInput {
   source: VideoInfo;
@@ -21,6 +22,8 @@ export interface ExportArgsInput {
   outputPath: string;
   /** H.264 encoder; defaults to x264 so callers without hardware detection keep 0.1.0 output. */
   encoder?: VideoEncoder | undefined;
+  /** Portion of the source to export; null = the whole clip. */
+  trim?: TrimRange | null | undefined;
 }
 
 /**
@@ -83,9 +86,11 @@ const audioChain = (
   info: VideoInfo,
   tracks: readonly number[],
   label: string,
+  /** Length of generated silence when no track is selected; the trimmed length for the source. */
+  duration = info.duration,
 ): string =>
   buildAudioMixFilter(inputIndex, existingTracks(info, tracks), label, {
-    silenceDuration: info.duration,
+    silenceDuration: duration,
   });
 
 function buildOutroChains(outro: VideoInfo, fps: number): string[] {
@@ -100,7 +105,13 @@ export function buildFilterComplex(input: ExportArgsInput): string {
   const fps = pickOutputFps(input.source.fps);
   const chains = [
     ...buildMainVideoChain(input, fps),
-    audioChain(0, input.source, input.audio.exportTracks, 'amain'),
+    audioChain(
+      0,
+      input.source,
+      input.audio.exportTracks,
+      'amain',
+      trimmedDuration(input.source.duration, input.trim ?? null),
+    ),
   ];
   if (input.outro) {
     chains.push(...buildOutroChains(input.outro, fps));
@@ -115,6 +126,11 @@ export function buildFilterComplex(input: ExportArgsInput): string {
 export function buildExportArgs(input: ExportArgsInput): string[] {
   const fps = pickOutputFps(input.source.fps);
   const args = ['-hide_banner', '-loglevel', 'error', '-nostats', '-progress', 'pipe:1', '-y'];
+  if (input.trim) {
+    // Input-side seeking: accurate for a re-encode, and the output timeline restarts at 0 so
+    // the (already shifted) subtitles line up.
+    args.push('-ss', fmt(input.trim.start), '-to', fmt(input.trim.end));
+  }
   args.push('-i', input.source.path);
   if (input.outro) {
     args.push('-i', input.outro.path);
@@ -145,8 +161,12 @@ export function buildExportArgs(input: ExportArgsInput): string[] {
 }
 
 /** Total seconds the progress denominator should use. */
-export function totalOutputDuration(source: VideoInfo, outro: VideoInfo | null): number {
-  return source.duration + (outro?.duration ?? 0);
+export function totalOutputDuration(
+  source: VideoInfo,
+  outro: VideoInfo | null,
+  trim: TrimRange | null = null,
+): number {
+  return trimmedDuration(source.duration, trim) + (outro?.duration ?? 0);
 }
 
 /**

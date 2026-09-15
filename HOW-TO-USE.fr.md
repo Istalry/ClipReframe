@@ -61,6 +61,15 @@ Au centre : votre source. À droite : le résultat vertical, en direct.
 
 Lecture : **Espace** lecture/pause · **← / →** ±1 s (**Maj** = ±5 s) · **M** couper le son · barre de défilement.
 
+### Découpe
+
+Seule une partie du clip doit sortir ? Placez la tête de lecture et appuyez sur **[** (ou **I**)
+pour fixer le début, **]** (ou **O**) pour la fin. La barre de défilement grise ce qui est
+exclu, la lecture boucle dans l'intervalle et la barre d'export affiche la durée découpée. Le
+**×** à côté de l'intervalle rétablit le clip entier. Les sous-titres sont générés sur tout le
+clip et suivent la découpe automatiquement ; la découpe est propre au clip et ne fait pas partie
+d'une configuration.
+
 ## 3. Configurations (presets)
 
 Colonne de gauche. Une configuration enregistre la mise en page, les deux rectangles, le ratio de

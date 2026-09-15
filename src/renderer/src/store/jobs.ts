@@ -61,6 +61,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         audio: project.audio,
         outputPath,
         encoder,
+        trim: project.trim,
       });
       set({ lastExportPath: outputPath });
       const toasts = useToastStore.getState();
