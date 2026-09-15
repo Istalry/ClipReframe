@@ -19,7 +19,7 @@ interface TranscribeJob {
   progress: TranscribeProgress | null;
 }
 
-interface JobState {
+export interface JobState {
   exportJob: ExportJob | null;
   lastExportPath: string | null;
   transcribeJob: TranscribeJob | null;

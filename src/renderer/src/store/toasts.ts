@@ -11,7 +11,7 @@ export interface Toast {
   detail?: string | undefined;
 }
 
-interface ToastState {
+export interface ToastState {
   toasts: Toast[];
   push: (kind: ToastKind, title: string, detail?: string) => void;
   dismiss: (id: number) => void;

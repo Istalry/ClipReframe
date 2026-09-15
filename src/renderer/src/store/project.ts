@@ -25,7 +25,7 @@ import { toastError, useToastStore } from './toasts';
 
 const DEFAULT_FRAME: FrameSize = { width: 1920, height: 1080 };
 
-interface ProjectState {
+export interface ProjectState {
   source: VideoInfo | null;
   settings: ProjectSettings;
   cues: SubtitleCue[];

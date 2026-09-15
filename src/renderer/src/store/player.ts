@@ -4,7 +4,7 @@
  * Playback state of the single <video> element. The element itself is stored so the vertical
  * preview can `drawImage` from it; it is registered by SourceStage on mount.
  */
-interface PlayerState {
+export interface PlayerState {
   element: HTMLVideoElement | null;
   playing: boolean;
   currentTime: number;

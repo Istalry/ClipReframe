@@ -7,7 +7,7 @@ import { invoke } from '../api';
 import { useProjectStore } from './project';
 import { toastError, useToastStore } from './toasts';
 
-interface PresetState {
+export interface PresetState {
   presets: Preset[];
   defaultPresetId: string | null;
   loaded: boolean;
