@@ -88,6 +88,27 @@ progress through `webContents.send` events declared in the IPC contract.
 - Small, focused commits; one milestone feature per PR. Contributor-facing rules live in
   `CONTRIBUTING.md`; add user-visible changes to `CHANGELOG.md` under **Unreleased**.
 
+## Releasing
+
+1. Move the **Unreleased** entries of `CHANGELOG.md` under a `## [X.Y.Z] - YYYY-MM-DD` heading
+   (add the compare/tag links at the bottom) and bump `version` in `package.json`.
+2. Commit, then `git tag -a vX.Y.Z -m "ClipReframe X.Y.Z"` and `git push origin vX.Y.Z`.
+3. `.github/workflows/release.yml` runs `pnpm check`, fetches the pinned binaries, packages the
+   portable exe and attaches it to a GitHub Release whose body is that CHANGELOG section. The
+   job fails if the section is missing.
+
+Third-party binaries are pinned and checksum-verified in `scripts/fetch-binaries.mjs`; bumping
+ffmpeg/whisper means updating the tag, the asset name and the SHA-256 there, plus the versions in
+`THIRD-PARTY-NOTICES.md`.
+
+## Dependabot
+
+- Weekly, minor/patch grouped; TypeScript majors are ignored until typescript-eslint supports them.
+- Merge npm PRs **one at a time** (or "Update branch" first): merging several at once leaves the
+  lockfile with stale peer-resolution keys and `pnpm install --frozen-lockfile` fails on `main`.
+  Fix is `pnpm install` locally and commit the reconciled `pnpm-lock.yaml`.
+- GitHub Actions bumps don't touch the lockfile and can be batched.
+
 ## Adding an IPC endpoint (checklist)
 
 1. Add schemas + channel name in `src/shared/ipc-contract.ts`.
