@@ -2,7 +2,7 @@
 
 Turn a 16:9 gameplay + webcam clip into a 1080×1920 vertical video for TikTok and YouTube Shorts.
 
-See **[HOW-TO-USE.md](HOW-TO-USE.md)** for the user guide.
+See **[HOW-TO-USE.md](HOW-TO-USE.md)** for the user guide (**[version française](HOW-TO-USE.fr.md)**).
 
 - Drag & drop a clip anywhere on the window, position the **webcam** and **gameplay** rectangles, watch the live 9:16 preview.
 - Two layouts: **Split** (webcam on top, gameplay below, adjustable ratio) and **Fill** (one 9:16 crop).
