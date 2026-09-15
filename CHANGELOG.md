@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-16
+
+Configurations saved by 0.1.0 load unchanged (the new word highlight defaults to the purple box).
+
 ### Added
 
 - GPU video encoding: NVIDIA NVENC, AMD AMF and Intel Quick Sync are probed at start-up and the
@@ -49,5 +53,6 @@ First public release.
   one-click packaging; binaries pinned and checksum-verified at fetch time.
 - English and French user guides.
 
-[Unreleased]: https://github.com/Istalry/ClipReframe/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Istalry/ClipReframe/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Istalry/ClipReframe/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Istalry/ClipReframe/releases/tag/v0.1.0
