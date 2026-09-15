@@ -26,7 +26,13 @@ export function registerMediaSchemePrivileges(): void {
       scheme: MEDIA_SCHEME,
       // `standard` is required for <video> to load the scheme at all (without it the element
       // fails with MEDIA_ERR_SRC_NOT_SUPPORTED even though the handler answers correctly).
-      privileges: { standard: true, stream: true, supportFetchAPI: true, bypassCSP: true, secure: true },
+      privileges: {
+        standard: true,
+        stream: true,
+        supportFetchAPI: true,
+        bypassCSP: true,
+        secure: true,
+      },
     },
   ]);
 }

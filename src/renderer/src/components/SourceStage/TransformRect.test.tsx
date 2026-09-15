@@ -7,7 +7,10 @@ import { TransformRect } from './TransformRect';
 const STAGE = { width: 1000, height: 500 };
 const base: Rect = { x: 0.2, y: 0.2, width: 0.4, height: 0.2 };
 
-function setup(rect: Rect = base, selected = false): { onChange: ReturnType<typeof vi.fn>; onSelect: ReturnType<typeof vi.fn> } {
+function setup(
+  rect: Rect = base,
+  selected = false,
+): { onChange: ReturnType<typeof vi.fn>; onSelect: ReturnType<typeof vi.fn> } {
   const onChange = vi.fn();
   const onSelect = vi.fn();
   render(
@@ -74,14 +77,24 @@ describe('TransformRect', () => {
 
   it('ignores pointers other than the one that started the drag', () => {
     const { onChange } = setup();
-    fireEvent.pointerDown(screen.getByTestId('rect-gameplay'), { button: 0, pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerDown(screen.getByTestId('rect-gameplay'), {
+      button: 0,
+      pointerId: 1,
+      clientX: 0,
+      clientY: 0,
+    });
     fireEvent.pointerMove(window, { pointerId: 99, clientX: 500, clientY: 0 });
     expect(onChange).not.toHaveBeenCalled();
   });
 
   it('ignores non-primary buttons', () => {
     const { onChange, onSelect } = setup();
-    fireEvent.pointerDown(screen.getByTestId('rect-gameplay'), { button: 2, pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerDown(screen.getByTestId('rect-gameplay'), {
+      button: 2,
+      pointerId: 1,
+      clientX: 0,
+      clientY: 0,
+    });
     fireEvent.pointerMove(window, { pointerId: 1, clientX: 500, clientY: 0 });
     expect(onSelect).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();

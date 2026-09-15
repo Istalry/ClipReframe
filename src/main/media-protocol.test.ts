@@ -2,7 +2,9 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-vi.mock('electron', () => ({ protocol: { registerSchemesAsPrivileged: vi.fn(), handle: vi.fn() } }));
+vi.mock('electron', () => ({
+  protocol: { registerSchemesAsPrivileged: vi.fn(), handle: vi.fn() },
+}));
 
 import { parseRange, serveFile } from './media-protocol';
 
