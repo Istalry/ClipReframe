@@ -49,7 +49,7 @@ jobs:
           echo "--- release notes ---"; cat release-notes.md
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: ClipReframe ${{ github.ref_name }}
           body_path: release-notes.md
