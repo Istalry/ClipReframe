@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 
-import { OUTPUT_HEIGHT, OUTPUT_WIDTH } from '@shared/constants';
+import { OUTPUT_ASPECT, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '@shared/constants';
 import { getOutputRegions, toPixelRect } from '@shared/geometry/layout';
 import type { ProjectSettings, VideoInfo } from '@shared/types';
 
+import { useFitAspect } from '../../hooks/useFitAspect';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
 
@@ -43,8 +44,11 @@ function drawFrame(
 
 export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.3);
+  const fitted = useFitAspect(containerRef, OUTPUT_ASPECT);
+  // Preview pixels per output pixel, for the subtitle overlay.
+  const scale = fitted.height / OUTPUT_HEIGHT;
 
   const settings = useProjectStore((s) => s.settings);
   const setSplitRatio = useProjectStore((s) => s.setSplitRatio);
@@ -84,31 +88,18 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
       };
       video.addEventListener('seeked', onSeeked);
       video.addEventListener('loadeddata', onSeeked);
+      video.addEventListener('canplay', onSeeked);
       draw();
       return () => {
         video.removeEventListener('seeked', onSeeked);
         video.removeEventListener('loadeddata', onSeeked);
+        video.removeEventListener('canplay', onSeeked);
       };
     }
     return () => {
       cancelAnimationFrame(raf);
     };
   }, [video, playing, settings, source, currentTime]);
-
-  // Track the rendered size so the subtitle overlay can scale from output pixels.
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) {
-      return;
-    }
-    const observer = new ResizeObserver(() => {
-      setScale(el.clientHeight / OUTPUT_HEIGHT);
-    });
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   const regions = getOutputRegions(settings.layout, settings.splitRatio);
   const splitY = settings.layout === 'split' ? (regions[0]?.height ?? 0) / OUTPUT_HEIGHT : null;
@@ -133,37 +124,39 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
   };
 
   return (
-    <div
-      ref={wrapperRef}
-      className="relative h-full max-h-full overflow-hidden rounded-md bg-black shadow-lg"
-      style={{ aspectRatio: `${OUTPUT_WIDTH} / ${OUTPUT_HEIGHT}` }}
-    >
-      <canvas
-        ref={canvasRef}
-        width={OUTPUT_WIDTH}
-        height={OUTPUT_HEIGHT}
-        className="block h-full w-full"
-      />
-      {settings.subtitles.enabled && (
-        <SubtitleOverlay
-          cues={cues}
-          style={settings.subtitles.style}
-          currentTime={currentTime}
-          scale={scale}
+    <div ref={containerRef} className="flex h-full w-full items-center justify-center">
+      <div
+        ref={wrapperRef}
+        className="relative overflow-hidden rounded-md bg-black shadow-lg"
+        style={{ width: fitted.width, height: fitted.height }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={OUTPUT_WIDTH}
+          height={OUTPUT_HEIGHT}
+          className="block h-full w-full"
         />
-      )}
-      {splitY !== null && (
-        <div
-          role="separator"
-          aria-label="Split ratio"
-          title="Drag to change the split"
-          className="group absolute right-0 left-0 h-3 -translate-y-1/2 cursor-row-resize touch-none"
-          style={{ top: `${splitY * 100}%` }}
-          onPointerDown={onSplitterDown}
-        >
-          <div className="bg-accent/70 group-hover:bg-accent absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2" />
-        </div>
-      )}
+        {settings.subtitles.enabled && (
+          <SubtitleOverlay
+            cues={cues}
+            style={settings.subtitles.style}
+            currentTime={currentTime}
+            scale={scale}
+          />
+        )}
+        {splitY !== null && (
+          <div
+            role="separator"
+            aria-label="Split ratio"
+            title="Drag to change the split"
+            className="group absolute right-0 left-0 h-3 -translate-y-1/2 cursor-row-resize touch-none"
+            style={{ top: `${splitY * 100}%` }}
+            onPointerDown={onSplitterDown}
+          >
+            <div className="bg-accent/70 group-hover:bg-accent absolute top-1/2 right-0 left-0 h-0.5 -translate-y-1/2" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

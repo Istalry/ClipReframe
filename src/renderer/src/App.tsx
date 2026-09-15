@@ -85,11 +85,11 @@ export function App(): ReactNode {
         <main className="flex min-w-0 flex-1 flex-col gap-3 p-4">
           {source ? (
             <>
-              <div className="flex min-h-0 flex-1 items-stretch justify-center gap-4">
-                <div className="flex min-w-0 flex-1 items-center justify-center">
+              <div className="flex min-h-0 flex-1 items-stretch gap-4">
+                <div className="min-h-0 min-w-0 flex-1 py-6">
                   <SourceStage source={source} />
                 </div>
-                <div className="flex h-full shrink-0 items-center">
+                <div className="min-h-0 w-[30%] max-w-[420px] shrink-0">
                   <VerticalPreview source={source} />
                 </div>
               </div>

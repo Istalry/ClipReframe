@@ -4,6 +4,7 @@ import { getRegionAspect, toNormalizedAspect } from '@shared/geometry/layout';
 import { toMediaUrl } from '@shared/media-url';
 import type { VideoInfo } from '@shared/types';
 
+import { useFitAspect } from '../../hooks/useFitAspect';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
 
@@ -15,8 +16,10 @@ interface SourceStageProps {
 
 /** The 16:9 source video with the two draggable crop rectangles on top. */
 export function SourceStage({ source }: SourceStageProps): ReactNode {
+  const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const fitted = useFitAspect(containerRef, source.width / source.height);
 
   const settings = useProjectStore((s) => s.settings);
   const selectedRect = useProjectStore((s) => s.selectedRect);
@@ -52,65 +55,69 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
   );
 
   return (
-    <div
-      ref={stageRef}
-      className="relative max-h-full max-w-full overflow-visible bg-black"
-      style={{ aspectRatio: `${source.width} / ${source.height}` }}
-      onPointerDown={() => {
-        selectRect(null);
-      }}
-    >
-      <video
-        ref={videoRef}
-        src={toMediaUrl(source.path)}
-        className="block h-full w-full"
-        muted={muted}
-        playsInline
-        onPlay={() => {
-          setPlaying(true);
+    <div ref={containerRef} className="flex h-full w-full items-center justify-center">
+      <div
+        ref={stageRef}
+        className="relative overflow-visible bg-black"
+        style={{ width: fitted.width, height: fitted.height }}
+        onPointerDown={() => {
+          selectRect(null);
         }}
-        onPause={() => {
-          setPlaying(false);
-        }}
-        onTimeUpdate={(e) => {
-          setCurrentTime(e.currentTarget.currentTime);
-        }}
-        onLoadedMetadata={(e) => {
-          setDuration(e.currentTarget.duration);
-        }}
-        onEnded={() => {
-          setPlaying(false);
-        }}
-      />
-      <div className="absolute inset-0">
-        {settings.layout === 'split' && (
-          <TransformRect
-            kind="webcam"
-            rect={settings.webcamRect}
-            normalizedAspect={webcamAspect}
-            selected={selectedRect === 'webcam'}
-            getStageSize={getStageSize}
-            onChange={(r) => {
-              setRect('webcam', r);
-            }}
-            onSelect={() => {
-              selectRect('webcam');
-            }}
-          />
-        )}
-        <TransformRect
-          kind="gameplay"
-          rect={settings.gameplayRect}
-          normalizedAspect={gameplayAspect}
-          selected={selectedRect === 'gameplay'}
-          getStageSize={getStageSize}
-          onChange={(r) => {
-            setRect('gameplay', r);
+      >
+        <video
+          ref={videoRef}
+          src={toMediaUrl(source.path)}
+          className="block h-full w-full"
+          muted={muted}
+          playsInline
+          // Decode the first frame right away so the vertical preview is not black before play.
+          preload="auto"
+          onPlay={() => {
+            setPlaying(true);
           }}
-          onSelect={() => {
-            selectRect('gameplay');
+          onPause={() => {
+            setPlaying(false);
+          }}
+          onTimeUpdate={(e) => {
+            setCurrentTime(e.currentTarget.currentTime);
+          }}
+          onLoadedMetadata={(e) => {
+            setDuration(e.currentTarget.duration);
+          }}
+          onEnded={() => {
+            setPlaying(false);
           }}
         />
+        <div className="absolute inset-0">
+          {settings.layout === 'split' && (
+            <TransformRect
+              kind="webcam"
+              rect={settings.webcamRect}
+              normalizedAspect={webcamAspect}
+              selected={selectedRect === 'webcam'}
+              getStageSize={getStageSize}
+              onChange={(r) => {
+                setRect('webcam', r);
+              }}
+              onSelect={() => {
+                selectRect('webcam');
+              }}
+            />
+          )}
+          <TransformRect
+            kind="gameplay"
+            rect={settings.gameplayRect}
+            normalizedAspect={gameplayAspect}
+            selected={selectedRect === 'gameplay'}
+            getStageSize={getStageSize}
+            onChange={(r) => {
+              setRect('gameplay', r);
+            }}
+            onSelect={() => {
+              selectRect('gameplay');
+            }}
+          />
+        </div>
       </div>
     </div>
   );
