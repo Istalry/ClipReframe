@@ -38,8 +38,10 @@ The app picks the largest `ggml-*.bin` present in `resources/bin`.
 ## Build the portable executable
 
 ```bash
-pnpm dist
+pnpm dist          # or double-click build.bat (installs, fetches binaries, runs checks, packages)
 ```
+
+`build.bat --skip-check` skips lint/typecheck/tests.
 
 Produces `release/ClipReframe-<version>-portable.exe` (~600 MB with the `small` model). Copy that one
 file anywhere and run it. The bundled binaries are extracted next to it on first launch (`ClipReframe/`
