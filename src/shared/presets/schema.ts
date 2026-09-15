@@ -8,10 +8,14 @@ import {
   SUBTITLE_LANGUAGE_CODES,
 } from '../constants';
 import { defaultRects } from '../geometry/layout';
-import type { Preset, ProjectSettings, SubtitleStyle } from '../types';
+import type { Preset, ProjectSettings, SubtitleHighlightMode, SubtitleStyle } from '../types';
 
 const unit = z.number().min(0).max(1);
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Expected #rrggbb');
+
+export const SUBTITLE_HIGHLIGHT_MODES = ['none', 'color', 'outline', 'box'] as const;
+export const DEFAULT_HIGHLIGHT_MODE: SubtitleHighlightMode = 'box';
+export const DEFAULT_HIGHLIGHT_COLOR = '#a970ff';
 
 export const rectSchema = z.object({ x: unit, y: unit, width: unit, height: unit });
 
@@ -30,6 +34,9 @@ export const subtitleStyleSchema = z.object({
   marginV: z.number().int().min(0).max(960),
   maxLineChars: z.number().int().min(10).max(80),
   uppercase: z.boolean(),
+  // Added in 0.1.1; defaults keep presets saved by 0.1.0 loading without a file version bump.
+  highlightMode: z.enum(SUBTITLE_HIGHLIGHT_MODES).default(DEFAULT_HIGHLIGHT_MODE),
+  highlightColor: hexColor.default(DEFAULT_HIGHLIGHT_COLOR),
 }) satisfies z.ZodType<SubtitleStyle>;
 
 export const subtitleSettingsSchema = z.object({
@@ -81,6 +88,8 @@ export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
   marginV: 260,
   maxLineChars: 32,
   uppercase: false,
+  highlightMode: DEFAULT_HIGHLIGHT_MODE,
+  highlightColor: DEFAULT_HIGHLIGHT_COLOR,
 };
 
 export function createDefaultSettings(): ProjectSettings {

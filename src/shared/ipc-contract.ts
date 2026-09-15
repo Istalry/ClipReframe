@@ -34,11 +34,18 @@ export const audioSelectionSchema = z.object({
   exportTracks: trackList,
 });
 
+export const subtitleWordSchema = z.object({
+  start: z.number().nonnegative(),
+  end: z.number().nonnegative(),
+  text: z.string(),
+});
+
 export const subtitleCueSchema = z.object({
   id: z.string(),
   start: z.number().nonnegative(),
   end: z.number().nonnegative(),
   text: z.string(),
+  words: z.array(subtitleWordSchema).optional(),
 });
 
 const jobId = z.string().min(1);

@@ -79,6 +79,11 @@ Presets live in `%APPDATA%\ClipReframe\presets.json`; copy that file to move the
 6. **Style**: font (all installed fonts), size, bold/italic/caps, colour, outline or background
    box, shadow, position (bottom / centre / top) and margin, max characters per line (auto-wrap).
    The preview on the right shows the result live.
+7. **Current word**: emphasise the word being spoken — **Box** (default, a rounded pill behind
+   it), **Text colour**, **Outline colour** (not offered with a background box) or **None** —
+   and pick the **highlight colour**. Word timings come from speech recognition; a cue you edit
+   keeps them as long as it still has the same number of words, otherwise its duration is spread
+   evenly over the words.
 
 Subtitles are **burned into** the video (they are part of the picture), which is what TikTok and
 Shorts need for autoplay-without-sound.

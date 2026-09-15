@@ -50,6 +50,9 @@ export interface AudioSelection {
 
 export type SubtitleAlignment = 'top' | 'center' | 'bottom';
 
+/** How the word being spoken is emphasised inside the cue. */
+export type SubtitleHighlightMode = 'none' | 'color' | 'outline' | 'box';
+
 export interface SubtitleStyle {
   fontFamily: string;
   /** In output pixels (1080×1920 canvas). */
@@ -70,6 +73,16 @@ export interface SubtitleStyle {
   /** Soft-wrap cues longer than this many characters. */
   maxLineChars: number;
   uppercase: boolean;
+  highlightMode: SubtitleHighlightMode;
+  /** `#rrggbb` */
+  highlightColor: string;
+}
+
+/** One spoken word with its timing, as reported by speech recognition. Seconds. */
+export interface SubtitleWord {
+  start: number;
+  end: number;
+  text: string;
 }
 
 export interface SubtitleCue {
@@ -78,6 +91,11 @@ export interface SubtitleCue {
   start: number;
   end: number;
   text: string;
+  /**
+   * Word timings from recognition, when available. Kept verbatim across text edits; the
+   * renderers re-align them to the current text (see `getCueWords`).
+   */
+  words?: SubtitleWord[] | undefined;
 }
 
 export interface SubtitleSettings {

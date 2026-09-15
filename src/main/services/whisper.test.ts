@@ -71,7 +71,13 @@ describe('runTranscription', () => {
     expect(ffmpegCall![1]).not.toContain('-filter_complex');
     expect(whisperCall![0]).toMatch(/whisper-cli\.exe$/);
     expect(whisperCall![1]).toEqual(
-      expect.arrayContaining(['-l', 'fr', '--output-json', '--print-progress']),
+      expect.arrayContaining([
+        '-l',
+        'fr',
+        '--output-json',
+        '--output-json-full',
+        '--print-progress',
+      ]),
     );
   });
 

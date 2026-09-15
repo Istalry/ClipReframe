@@ -1,5 +1,7 @@
 import type { SubtitleCue } from '../types';
 
+import { normalizeForCompare } from './text';
+
 export interface CleanupOptions {
   /** Drop cues that are only non-speech markers like `[Musique]`, `(rires)`, `♪`. */
   dropNonSpeech: boolean;
@@ -33,14 +35,6 @@ const MIN_CUE_DURATION = 0.15;
 
 const NON_SPEECH_ONLY =
   /^[\s\p{P}\p{S}]*((\[[^\]]*\]|\([^)]*\)|\*[^*]*\*|♪+|[.…]+)[\s\p{P}\p{S}]*)+$/u;
-
-const normalizeForCompare = (text: string): string =>
-  text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim();
 
 export function isNonSpeech(text: string): boolean {
   return text.trim().length === 0 || NON_SPEECH_ONLY.test(text);

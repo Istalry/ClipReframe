@@ -93,6 +93,7 @@ export async function runTranscription(options: TranscribeJobOptions): Promise<T
         '-l',
         language,
         '--output-json',
+        '--output-json-full',
         '--output-file',
         outBase,
         '--max-len',

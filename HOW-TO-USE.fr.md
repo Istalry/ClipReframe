@@ -86,6 +86,11 @@ transférer sur un autre PC.
 6. **Style** : police (toutes celles installées), taille, gras/italique/majuscules, couleur, contour
    ou boîte de fond, ombre, position (bas / centre / haut) et marge, nombre maximal de caractères
    par ligne (retour automatique). L'aperçu de droite reflète le résultat en direct.
+7. **Mot en cours** : met en valeur le mot prononcé — **Boîte** (par défaut, une pastille arrondie
+   derrière le mot), **Couleur du texte**, **Couleur du contour** (indisponible avec une boîte de
+   fond) ou **Aucun** — avec la **couleur de surlignage** de votre choix. Les temps des mots
+   viennent de la reconnaissance vocale ; un sous-titre modifié les conserve tant qu'il garde le
+   même nombre de mots, sinon sa durée est répartie uniformément entre les mots.
 
 Les sous-titres sont **incrustés** dans la vidéo (ils font partie de l'image), ce qui est
 nécessaire sur TikTok et Shorts pour la lecture automatique sans son.

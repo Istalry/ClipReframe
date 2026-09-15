@@ -6,6 +6,14 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Added
+
+- Current-word highlight in subtitles: the word being spoken is emphasised with a rounded
+  **box** (default), a **text colour** or an **outline colour**, in a colour of your choice
+  (default `#a970ff`). Shown in the live preview and burned into the export; stored in
+  configurations. Word timings come from whisper.cpp; edited cues keep them when the word count
+  is unchanged, otherwise the cue duration is spread evenly over its words.
+
 ## [0.1.0] - 2026-09-15
 
 First public release.

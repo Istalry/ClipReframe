@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
-import type { SubtitleAlignment } from '@shared/types';
+import type { SubtitleAlignment, SubtitleHighlightMode } from '@shared/types';
 
 import { invoke } from '../../api';
 import { useProjectStore } from '../../store/project';
@@ -10,6 +10,13 @@ const ALIGNMENTS: { value: SubtitleAlignment; label: string }[] = [
   { value: 'bottom', label: 'Bottom' },
   { value: 'center', label: 'Centre' },
   { value: 'top', label: 'Top' },
+];
+
+const HIGHLIGHT_MODES: { value: SubtitleHighlightMode; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'color', label: 'Text colour' },
+  { value: 'outline', label: 'Outline colour' },
+  { value: 'box', label: 'Box' },
 ];
 
 let fontsCache: string[] | null = null;
@@ -41,6 +48,10 @@ export function StyleEditor(): ReactNode {
 
   const fontOptions = (fonts.includes(style.fontFamily) ? fonts : [style.fontFamily, ...fonts]).map(
     (f) => ({ value: f, label: f }),
+  );
+  // A box style has no outline to recolour; keep the stored value visible so nothing changes silently.
+  const highlightOptions = HIGHLIGHT_MODES.filter(
+    (m) => m.value !== 'outline' || !style.backgroundBox || style.highlightMode === 'outline',
   );
 
   return (
@@ -149,6 +160,25 @@ export function StyleEditor(): ReactNode {
             />
           </Field>
         </>
+      )}
+      <Field label="Current word">
+        <Select<SubtitleHighlightMode>
+          value={style.highlightMode}
+          options={highlightOptions}
+          onChange={(highlightMode) => {
+            updateStyle({ highlightMode });
+          }}
+        />
+      </Field>
+      {style.highlightMode !== 'none' && (
+        <Field label="Highlight colour" inline>
+          <ColorInput
+            value={style.highlightColor}
+            onChange={(highlightColor) => {
+              updateStyle({ highlightColor });
+            }}
+          />
+        </Field>
       )}
       <Field label="Position">
         <Select

@@ -18,6 +18,23 @@ describe('projectSettingsSchema', () => {
     expect(s.outro).toBeNull();
   });
 
+  it('defaults the word highlight to a purple box for presets saved before 0.1.1', () => {
+    const s = createDefaultSettings();
+    const { highlightMode: _mode, highlightColor: _color, ...legacyStyle } = s.subtitles.style;
+    const parsed = projectSettingsSchema.parse({
+      ...s,
+      subtitles: { ...s.subtitles, style: legacyStyle },
+    });
+    expect(parsed.subtitles.style.highlightMode).toBe('box');
+    expect(parsed.subtitles.style.highlightColor).toBe('#a970ff');
+    expect(
+      projectSettingsSchema.safeParse({
+        ...s,
+        subtitles: { ...s.subtitles, style: { ...s.subtitles.style, highlightColor: 'purple' } },
+      }).success,
+    ).toBe(false);
+  });
+
   it('rejects out-of-range rects and colours', () => {
     const s = createDefaultSettings();
     expect(

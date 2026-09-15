@@ -77,6 +77,7 @@ describe('runExport', () => {
     run.mockResolvedValue({ stdout: '', stderr: '' });
     const settings = createDefaultSettings();
     settings.subtitles.enabled = true;
+    settings.subtitles.style.highlightMode = 'none';
     await runExport({
       jobId: 'j2',
       request: request({ settings, cues: [{ id: 'c', start: 1, end: 2, text: 'Salut' }] }),
