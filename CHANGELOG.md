@@ -11,6 +11,9 @@ All notable changes to this project are documented in this file. The format is b
 - GPU video encoding: NVIDIA NVENC, AMD AMF and Intel Quick Sync are probed at start-up and the
   first working one encodes the export (several times faster than x264 at a matching quality).
   A selector in the export bar forces the CPU; a GPU failure falls back to x264 automatically.
+- Outro videos are copied into `%APPDATA%\ClipReframe\outros` when picked, so configurations
+  keep working after the original file is moved or deleted; unreferenced copies are removed at
+  start-up.
 - Current-word highlight in subtitles: the word being spoken is emphasised with a rounded
   **box** (default), a **text colour** or an **outline colour**, in a colour of your choice
   (default `#a970ff`). Shown in the live preview and burned into the export; stored in

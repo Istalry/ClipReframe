@@ -10,3 +10,8 @@ export function formatTime(seconds: number): string {
 export function defaultOutputName(fileName: string): string {
   return `${fileName.replace(/\.[^.]+$/, '')}_vertical.mp4`;
 }
+
+/** Outro copies live as `<12 hex>-<original name>` in the app data; show the original name. */
+export function outroDisplayName(fileName: string): string {
+  return fileName.replace(/^[0-9a-f]{12}-/, '');
+}

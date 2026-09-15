@@ -109,6 +109,11 @@ export const invokeContract = {
     response: presetsFileSchema,
   },
 
+  'outro:import': {
+    request: z.object({ path: z.string() }),
+    response: z.object({ path: z.string() }),
+  },
+
   'fonts:list': {
     request: z.void(),
     response: z.array(z.string()),

@@ -6,7 +6,7 @@ import { OUTPUT_ASPECT } from '@shared/constants';
 
 import { getPathForFile, invoke } from '../../api';
 import { isSupportedVideoName, OWN_DROP_TARGET_ATTR } from '../../hooks/useWindowFileDrop';
-import { formatTime } from '../../lib/format';
+import { formatTime, outroDisplayName } from '../../lib/format';
 import { useProjectStore } from '../../store/project';
 import { toastError } from '../../store/toasts';
 import { Button } from '../ui/Button';
@@ -17,6 +17,7 @@ export function OutroPanel(): ReactNode {
   const outro = useProjectStore((s) => s.settings.outro);
   const info = useProjectStore((s) => s.outroInfo);
   const missing = useProjectStore((s) => s.outroMissing);
+  const importing = useProjectStore((s) => s.outroImporting);
   const setOutro = useProjectStore((s) => s.setOutro);
   const [over, setOver] = useState(false);
 
@@ -65,7 +66,7 @@ export function OutroPanel(): ReactNode {
             <Clapperboard size={16} className="text-muted mt-0.5 shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="truncate" title={outro.path}>
-                {info?.fileName ?? outro.path}
+                {info ? outroDisplayName(info.fileName) : outro.path}
               </div>
               {info && (
                 <div className="text-muted">
@@ -88,6 +89,9 @@ export function OutroPanel(): ReactNode {
               <AlertTriangle size={12} /> File not found — pick it again.
             </p>
           )}
+          {info && !importing && (
+            <p className="text-muted">Kept as a copy in the app data; the original can move.</p>
+          )}
           {notVertical && (
             <p className="flex items-center gap-1 text-yellow-400">
               <AlertTriangle size={12} /> Not 9:16 — it will be letterboxed.
@@ -100,11 +104,12 @@ export function OutroPanel(): ReactNode {
         </p>
       )}
       <Button
+        disabled={importing}
         onClick={() => {
           void pick();
         }}
       >
-        {outro ? 'Change outro…' : 'Choose outro…'}
+        {importing ? 'Copying…' : outro ? 'Change outro…' : 'Choose outro…'}
       </Button>
     </div>
   );

@@ -34,6 +34,8 @@ export interface ProjectState {
   /** Probed metadata of `settings.outro.path`, null when unset or missing. */
   outroInfo: VideoInfo | null;
   outroMissing: boolean;
+  /** True while a picked outro is being copied into the app's library. */
+  outroImporting: boolean;
   /** Preset the current settings were loaded from, for "Update" and the modified indicator. */
   activePresetId: string | null;
   dirty: boolean;
@@ -113,6 +115,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     cues: [],
     outroInfo: null,
     outroMissing: false,
+    outroImporting: false,
     activePresetId: null,
     dirty: false,
     selectedRect: null,
@@ -221,9 +224,21 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     },
 
     setOutro: async (path) => {
-      const { info, missing } = await probeOutro(path);
-      patchSettings((s) => ({ ...s, outro: path && info ? { path } : null }));
-      set({ outroInfo: info, outroMissing: missing });
+      // Keep our own copy so the preset survives the original being moved or deleted.
+      let stored = path;
+      if (path) {
+        set({ outroImporting: true });
+        try {
+          stored = (await invoke('outro:import', { path })).path;
+        } catch (err) {
+          toastError(err, 'Could not copy the outro video');
+          set({ outroImporting: false });
+          return;
+        }
+      }
+      const { info, missing } = await probeOutro(stored);
+      patchSettings((s) => ({ ...s, outro: stored && info ? { path: stored } : null }));
+      set({ outroInfo: info, outroMissing: missing, outroImporting: false });
     },
 
     markSaved: (presetId) => {

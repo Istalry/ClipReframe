@@ -95,6 +95,11 @@ unchanged after the clip. If it is not 9:16 it is letterboxed, never stretched. 
 appear on the outro. The outro is saved in the configuration, so a "Shorts" preset can carry its
 own end card.
 
+The app keeps its **own copy** of the outro in `%APPDATA%\ClipReframe\outros`, so you can move or
+delete the original afterwards. Copies nobody references any more are cleaned up at the next
+start. Configurations saved by 0.1.0 still point at the original file: pick the outro again once
+and save the configuration to switch them to a copy.
+
 ## 6. Export
 
 Click **Export**, choose a folder. The file is named `<clip>_vertical.mp4` (the folder is

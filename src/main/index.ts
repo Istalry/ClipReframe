@@ -8,6 +8,7 @@ import { createLogger } from './logger';
 import { registerMediaProtocolHandler, registerMediaSchemePrivileges } from './media-protocol';
 import { detectHardwareEncoders } from './services/encoders';
 import { jobs } from './services/jobs';
+import { OutroLibrary } from './services/outro-library';
 import { PresetsStore } from './services/presets-store';
 
 const log = createLogger('main');
@@ -63,7 +64,16 @@ void app.whenReady().then(() => {
   });
 
   registerMediaProtocolHandler();
-  registerIpcHandlers(PresetsStore.forUserData(app.getPath('userData')));
+  const presets = PresetsStore.forUserData(app.getPath('userData'));
+  const outros = OutroLibrary.forUserData(app.getPath('userData'));
+  registerIpcHandlers(presets, outros);
+  // Drop outro copies that no preset references any more (a deleted preset's outro, typically).
+  void presets
+    .load()
+    .then((file) => outros.prune(file.presets.map((p) => p.outro?.path)))
+    .catch((err: unknown) => {
+      log.warn('outro clean-up skipped', err);
+    });
   createWindow();
   // Warm the GPU encoder probe so the first export does not wait for it.
   void detectHardwareEncoders();

@@ -102,6 +102,12 @@ ajoutée telle quelle après le clip. Si elle n'est pas en 9:16 elle est encadr�
 jamais déformée. Les sous-titres n'apparaissent jamais sur l'outro. L'outro est enregistré dans la
 configuration : un preset « Shorts » peut donc embarquer sa propre fin de vidéo.
 
+L'application conserve sa **propre copie** de l'outro dans `%APPDATA%\ClipReframe\outros` : vous
+pouvez ensuite déplacer ou supprimer l'original. Les copies que plus aucune configuration
+n'utilise sont nettoyées au démarrage suivant. Les configurations enregistrées avec la 0.1.0
+pointent encore vers le fichier d'origine : re-choisissez l'outro une fois et enregistrez la
+configuration pour passer à une copie.
+
 ## 6. Export
 
 Cliquez sur **Export** et choisissez un dossier. Le fichier est nommé `<clip>_vertical.mp4` (le
