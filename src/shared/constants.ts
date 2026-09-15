@@ -28,4 +28,4 @@ export const SUBTITLE_LANGUAGE_LABELS: Record<SubtitleLanguage, string> = {
   auto: 'Auto-detect',
 };
 
-export const DEFAULT_SUBTITLE_LANGUAGE: SubtitleLanguage = 'fr';
+export const DEFAULT_SUBTITLE_LANGUAGE: SubtitleLanguage = 'auto';

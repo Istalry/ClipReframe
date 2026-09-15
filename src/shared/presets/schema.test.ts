@@ -11,9 +11,9 @@ describe('projectSettingsSchema', () => {
     expect(projectSettingsSchema.safeParse(createDefaultSettings()).success).toBe(true);
   });
 
-  it('defaults subtitles to French and disabled', () => {
+  it('defaults subtitles to auto-detect and disabled', () => {
     const s = createDefaultSettings();
-    expect(s.subtitles.language).toBe('fr');
+    expect(s.subtitles.language).toBe('auto');
     expect(s.subtitles.enabled).toBe(false);
     expect(s.outro).toBeNull();
   });
