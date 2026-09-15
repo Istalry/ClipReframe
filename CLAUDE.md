@@ -9,7 +9,7 @@ ClipReframe is a Windows desktop app that reframes a 16:9 gameplay + webcam clip
 | -------------------------- | ------------------------------------------------------------------------------------- |
 | `pnpm install`             | Install dependencies                                                                  |
 | `pnpm fetch-binaries`      | Download ffmpeg / ffprobe / whisper-cli / model into `resources/bin/` (required once) |
-| `pnpm dev`                 | Run the app with hot reload                                                           |
+| `pnpm dev -- --watch`      | Run the app with hot reload (`--watch` restarts Electron on main/preload changes)     |
 | `pnpm check`               | `lint` + `typecheck` + `test` — must pass before every commit                         |
 | `pnpm lint` / `lint:fix`   | ESLint (strict type-checked rules)                                                    |
 | `pnpm typecheck`           | `tsc --noEmit` for both the Node and the web tsconfig                                 |
@@ -17,6 +17,13 @@ ClipReframe is a Windows desktop app that reframes a 16:9 gameplay + webcam clip
 | `pnpm format`              | Prettier                                                                              |
 | `pnpm build`               | Bundle main / preload / renderer into `out/`                                          |
 | `pnpm dist`                | Build + package the portable `.exe` into `release/`                                   |
+
+Environment gotchas:
+
+- Some IDE terminals export `ELECTRON_RUN_AS_NODE=1`, which makes Electron start as plain Node
+  ("does not provide an export named 'BrowserWindow'"). Unset it before `pnpm dev` / running the exe.
+- For end-to-end checks, run `pnpm dev -- --watch --remote-debugging-port=<port>`; dev builds expose
+  the Zustand stores on `window.__clipreframe` so the app can be driven over the DevTools protocol.
 
 ## Architecture
 
