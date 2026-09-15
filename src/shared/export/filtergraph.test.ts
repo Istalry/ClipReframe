@@ -53,7 +53,7 @@ describe('escapeFilterPath', () => {
   });
 
   it('handles accents and spaces untouched', () => {
-    expect(escapeFilterPath('C:\\Users\\Jérôme B\\x')).toBe('C\\:/Users/Jérôme B/x');
+    expect(escapeFilterPath('C:\\Users\\Zoé Ünal\\x')).toBe('C\\:/Users/Zoé Ünal/x');
   });
 });
 

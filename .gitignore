@@ -35,7 +35,8 @@ tmp/
 Thumbs.db
 desktop.ini
 
-# IDE
+# IDE / local tool settings
+.claude/
 .idea/
 .vscode/*
 !.vscode/extensions.json

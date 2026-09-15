@@ -1,4 +1,4 @@
-appId: com.j2studio.clipreframe
+appId: com.istalry.clipreframe
 productName: ClipReframe
 directories:
   buildResources: resources
@@ -13,6 +13,11 @@ extraResources:
     to: bin
     filter:
       - '**/*'
+  # Licence texts ship next to the binaries they cover.
+  - from: LICENSE
+    to: LICENSE
+  - from: THIRD-PARTY-NOTICES.md
+    to: THIRD-PARTY-NOTICES.md
 asar: true
 win:
   target:

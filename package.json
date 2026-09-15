@@ -3,7 +3,25 @@
   "version": "0.1.0",
   "description": "Reframe 16:9 gameplay + webcam clips into 9:16 vertical videos for TikTok and YouTube Shorts.",
   "main": "./out/main/index.js",
-  "author": "J2 Studio",
+  "author": "Istalry",
+  "homepage": "https://github.com/Istalry/ClipReframe#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Istalry/ClipReframe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Istalry/ClipReframe/issues"
+  },
+  "keywords": [
+    "electron",
+    "ffmpeg",
+    "whisper",
+    "tiktok",
+    "youtube-shorts",
+    "vertical-video",
+    "reframe",
+    "subtitles"
+  ],
   "license": "MIT",
   "private": true,
   "type": "module",
