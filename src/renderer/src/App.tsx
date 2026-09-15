@@ -16,10 +16,12 @@ import { Button } from './components/ui/Button';
 import { VerticalPreview } from './components/VerticalPreview/VerticalPreview';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePreviewMix } from './hooks/usePreviewMix';
+import { useProxy } from './hooks/useProxy';
 import { useWindowFileDrop } from './hooks/useWindowFileDrop';
 import { useAppStore } from './store/app';
 import { usePresetStore } from './store/presets';
 import { useProjectStore } from './store/project';
+import { useProxyStore } from './store/proxy';
 
 function BinaryWarning({ missing }: { missing: string[] }): ReactNode {
   return (
@@ -44,6 +46,10 @@ export function App(): ReactNode {
 
   useKeyboardShortcuts();
   usePreviewMix();
+  useProxy();
+  const proxyJob = useProxyStore((s) => s.jobId !== null);
+  const proxyFraction = useProxyStore((s) => s.fraction);
+  const proxyReady = useProxyStore((s) => s.path !== null);
   const dragging = useWindowFileDrop();
 
   useEffect(() => {
@@ -105,6 +111,13 @@ export function App(): ReactNode {
                   <VerticalPreview source={source} />
                 </div>
               </div>
+              {(proxyJob || proxyReady) && (
+                <p className="text-muted text-xs">
+                  {proxyJob
+                    ? `Preparing a preview for this video… ${Math.round(proxyFraction * 100)}%`
+                    : 'Preview uses a lower-quality copy; the export uses the original.'}
+                </p>
+              )}
               <Transport />
             </>
           ) : (

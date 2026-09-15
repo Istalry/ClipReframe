@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file. The format is b
 - GPU video encoding: NVIDIA NVENC, AMD AMF and Intel Quick Sync are probed at start-up and the
   first working one encodes the export (several times faster than x264 at a matching quality).
   A selector in the export bar forces the CPU; a GPU failure falls back to x264 automatically.
+- Sources the built-in player cannot decode (ProRes, some HEVC / 10-bit) are previewed through
+  a 720p proxy transcoded on load; the export still reads the original.
 - Trim: in/out points set at the playhead (`[` / `]` buttons or `I` / `O` keys) restrict the
   export to that range; the preview loops inside it and subtitles are shifted to match.
 - The player plays the export audio mix for multi-track clips (the ticked export tracks summed

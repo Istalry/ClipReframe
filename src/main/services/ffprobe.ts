@@ -12,6 +12,7 @@ import { run } from './process';
 const streamSchema = z.object({
   codec_type: z.string(),
   codec_name: z.string().optional(),
+  pix_fmt: z.string().optional(),
   width: z.number().optional(),
   height: z.number().optional(),
   r_frame_rate: z.string().optional(),
@@ -85,6 +86,7 @@ export function toVideoInfo(path: string, raw: unknown): VideoInfo {
     duration: Number.isFinite(duration) ? duration : 0,
     fps: parseFrameRate(video.avg_frame_rate) || parseFrameRate(video.r_frame_rate),
     videoCodec: video.codec_name ?? 'unknown',
+    ...(video.pix_fmt ? { pixelFormat: video.pix_fmt } : {}),
     audioTracks,
   };
 }

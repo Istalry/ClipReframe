@@ -15,6 +15,10 @@ prête pour TikTok et YouTube Shorts. Rien à installer : lancez `ClipReframe-<v
 - Formats acceptés : `.mp4`, `.mov`, `.mkv`, `.webm`, `.m4v`. Toutes les résolutions fonctionnent ;
   le 16:9 est le format pour lequel la mise en page est conçue (un message vous prévient pour les
   autres ratios).
+- Si le lecteur intégré ne sait pas décoder la vidéo (ProRes, certains enregistrements HEVC ou
+  10 bits), l'application fabrique d'abord une **copie d'aperçu** en 720p — une ligne de
+  progression s'affiche au-dessus des commandes — et la lit à la place. Le cadrage, les
+  sous-titres et l'export utilisent toujours le fichier d'origine.
 - Déposer un autre fichier alors qu'un clip est ouvert **remplace** le clip (un voile violet « Drop
   to replace » le confirme). Le panneau de droite n'est pas couvert par ce voile : vous pouvez donc
   toujours y déposer un outro.

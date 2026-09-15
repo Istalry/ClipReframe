@@ -3,6 +3,7 @@ import { useJobStore } from './store/jobs';
 import { usePlayerStore } from './store/player';
 import { usePresetStore } from './store/presets';
 import { useProjectStore } from './store/project';
+import { useProxyStore } from './store/proxy';
 import { useToastStore } from './store/toasts';
 
 const stores = {
@@ -11,6 +12,7 @@ const stores = {
   presets: usePresetStore,
   jobs: useJobStore,
   player: usePlayerStore,
+  proxy: useProxyStore,
   toasts: useToastStore,
 };
 

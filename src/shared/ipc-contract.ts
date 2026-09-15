@@ -25,6 +25,7 @@ export const videoInfoSchema = z.object({
   duration: z.number().nonnegative(),
   fps: z.number().nonnegative(),
   videoCodec: z.string(),
+  pixelFormat: z.string().optional(),
   audioTracks: z.array(audioTrackSchema),
 });
 
@@ -89,6 +90,14 @@ export const invokeContract = {
   'video:probe': {
     request: z.object({ path: z.string() }),
     response: videoInfoSchema,
+  },
+  'video:makeProxy': {
+    request: z.object({ jobId, path: z.string(), encoder: videoEncoder }),
+    response: z.object({ path: z.string() }),
+  },
+  'video:cancelProxy': {
+    request: z.object({ jobId }),
+    response: z.void(),
   },
 
   'presets:list': {
@@ -189,6 +198,10 @@ export const eventContract = {
     fraction: z.number().min(0).max(1),
     outTime: z.number().nonnegative(),
     speed: z.string(),
+  }),
+  'video:proxyProgress': z.object({
+    jobId,
+    fraction: z.number().min(0).max(1),
   }),
   'subtitles:progress': z.object({
     jobId,

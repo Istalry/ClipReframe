@@ -11,6 +11,7 @@ import { jobs } from './services/jobs';
 import { OutroLibrary } from './services/outro-library';
 import { PresetsStore } from './services/presets-store';
 import { disposePreviewAudio } from './services/preview-audio';
+import { disposeProxy } from './services/proxy';
 
 const log = createLogger('main');
 
@@ -91,6 +92,7 @@ app.on('before-quit', () => {
   // Kill any ffmpeg/whisper still running so we never leave orphans behind.
   jobs.cancelAll();
   void disposePreviewAudio();
+  void disposeProxy();
 });
 
 app.on('window-all-closed', () => {

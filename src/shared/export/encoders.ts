@@ -89,6 +89,17 @@ export function encoderArgs(encoder: VideoEncoder): string[] {
 }
 
 /**
+ * Codec argv for the preview proxy: speed over quality. GPU encoders are fast whatever their
+ * settings; x264 gets its fastest preset.
+ */
+export function proxyEncoderArgs(encoder: VideoEncoder): string[] {
+  if (encoder === 'libx264') {
+    return ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23'];
+  }
+  return encoderArgs(encoder);
+}
+
+/**
  * The encoder to use for a preference: `auto` takes the first working GPU encoder in the
  * order the app prefers (NVENC, AMF, QSV) and falls back to x264.
  */

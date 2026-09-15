@@ -13,6 +13,9 @@ TikTok and YouTube Shorts. No install: run `ClipReframe-<version>-portable.exe`.
 - **Drag & drop** a video anywhere onto the window, or click **Browse…**.
 - Supported: `.mp4`, `.mov`, `.mkv`, `.webm`, `.m4v`. Any resolution works; 16:9 is what the layout
   is designed for (you get a notice for other aspect ratios).
+- If the built-in player cannot decode the video (ProRes, some HEVC or 10-bit recordings) the app
+  makes a 720p **preview copy** first — a progress line appears above the transport — and plays
+  that instead. Framing, subtitles and the export all use the original file.
 - Dropping another file while a clip is open **replaces** the clip (a purple "Drop to replace"
   overlay confirms it). The right-hand panel is excluded from that overlay so you can still drop
   an outro there.

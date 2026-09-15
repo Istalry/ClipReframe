@@ -8,6 +8,7 @@ import { useFitAspect } from '../../hooks/useFitAspect';
 import { useMixSync } from '../../hooks/useMixSync';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
+import { selectProxyPath, useProxyStore } from '../../store/proxy';
 
 import { TransformRect } from './TransformRect';
 
@@ -28,6 +29,8 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
   const setRect = useProjectStore((s) => s.setRect);
   const selectRect = useProjectStore((s) => s.selectRect);
   const trim = useProjectStore((s) => s.trim);
+  const proxyPath = useProxyStore(selectProxyPath(source));
+  const ensureProxy = useProxyStore((s) => s.ensure);
 
   const register = usePlayerStore((s) => s.register);
   const setPlaying = usePlayerStore((s) => s.setPlaying);
@@ -71,7 +74,14 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
       >
         <video
           ref={videoRef}
-          src={toMediaUrl(source.path)}
+          src={toMediaUrl(proxyPath ?? source.path)}
+          // Two ways Chromium gives up on a codec: an error, or metadata with no video at all
+          // (ProRes, some HEVC): the audio plays over a black frame. Either way, make a proxy.
+          onError={() => {
+            if (!proxyPath) {
+              void ensureProxy(source);
+            }
+          }}
           className="block h-full w-full"
           // With a rendered mix the <audio> below carries the sound, not the file's default track.
           muted={muted || mixPath !== null}
@@ -94,6 +104,9 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
           }}
           onLoadedMetadata={(e) => {
             setDuration(e.currentTarget.duration);
+            if (e.currentTarget.videoWidth === 0 && !proxyPath) {
+              void ensureProxy(source);
+            }
           }}
           onEnded={() => {
             setPlaying(false);

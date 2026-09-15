@@ -74,8 +74,9 @@ launch (kept between runs).
 - Windows x64 only.
 - Speech recognition runs on the CPU (no GPU whisper build yet). Video encoding uses the GPU
   when available, x264 otherwise.
-- Preview playback relies on Chromium decoders: H.264 / VP9 / AV1 play; some HEVC or 10-bit sources
-  will not preview (export still works). No proxy transcoding yet.
+- Preview playback relies on Chromium decoders (H.264 / VP9 / AV1, plus whatever the GPU decodes).
+  Sources it cannot play (ProRes, some HEVC / 10-bit) are previewed through a 720p proxy that is
+  transcoded on load, which takes a moment; the export always uses the original.
 - Subtitle preview is a CSS approximation of libass; the burned-in result can differ marginally.
 
 ## Project layout

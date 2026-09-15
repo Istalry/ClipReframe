@@ -38,6 +38,8 @@ export interface VideoInfo {
   duration: number;
   fps: number;
   videoCodec: string;
+  /** ffprobe `pix_fmt`, e.g. `yuv420p`, `yuv420p10le`; tells whether Chromium can decode it. */
+  pixelFormat?: string | undefined;
   audioTracks: AudioTrack[];
 }
 
