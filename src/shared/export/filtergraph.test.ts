@@ -127,12 +127,18 @@ describe('buildFilterComplex', () => {
   });
 
   it('deselecting every track makes the export silent', () => {
-    const fc = buildFilterComplex({ ...base(), audio: { transcribeTracks: [0], exportTracks: [] } });
+    const fc = buildFilterComplex({
+      ...base(),
+      audio: { transcribeTracks: [0], exportTracks: [] },
+    });
     expect(fc).toContain('anullsrc=r=48000:cl=stereo:d=42[amain]');
   });
 
   it('drops selected tracks that the clip does not have', () => {
-    const fc = buildFilterComplex({ ...base(), audio: { transcribeTracks: [], exportTracks: [0, 7] } });
+    const fc = buildFilterComplex({
+      ...base(),
+      audio: { transcribeTracks: [], exportTracks: [0, 7] },
+    });
     expect(fc).toContain('[0:a:0]aformat=');
     expect(fc).not.toContain('amix');
   });

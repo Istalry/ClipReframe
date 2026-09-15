@@ -16,6 +16,7 @@ import { Button } from './components/ui/Button';
 import { VerticalPreview } from './components/VerticalPreview/VerticalPreview';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useWindowFileDrop } from './hooks/useWindowFileDrop';
+import { useAppStore } from './store/app';
 import { usePresetStore } from './store/presets';
 import { useProjectStore } from './store/project';
 
@@ -37,6 +38,7 @@ export function App(): ReactNode {
   const setAudioSelection = useProjectStore((s) => s.setAudioSelection);
   const dismissAudioChoice = useProjectStore((s) => s.dismissAudioChoice);
   const loadPresets = usePresetStore((s) => s.load);
+  const loadCapabilities = useAppStore((s) => s.loadCapabilities);
   const [missingBinaries, setMissingBinaries] = useState<string[]>([]);
 
   useKeyboardShortcuts();
@@ -44,6 +46,7 @@ export function App(): ReactNode {
 
   useEffect(() => {
     void loadPresets();
+    void loadCapabilities();
     invoke('app:checkBinaries', undefined)
       .then((r) => {
         setMissingBinaries(r.missing);
@@ -51,7 +54,7 @@ export function App(): ReactNode {
       .catch(() => {
         setMissingBinaries(['(could not check)']);
       });
-  }, [loadPresets]);
+  }, [loadPresets, loadCapabilities]);
 
   // Apply the default preset the first time a video is loaded.
   const sourcePath = source?.path;

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { SUBTITLE_LANGUAGE_CODES } from './constants';
 import type { SerializedError } from './errors';
+import { VIDEO_ENCODERS } from './export/encoders';
 import { presetSchema, presetsFileSchema, projectSettingsSchema } from './presets/schema';
 
 // ---------------------------------------------------------------------------------------------
@@ -49,6 +50,7 @@ export const subtitleCueSchema = z.object({
 });
 
 const jobId = z.string().min(1);
+const videoEncoder = z.enum(VIDEO_ENCODERS);
 
 // ---------------------------------------------------------------------------------------------
 // Request/response channels (ipcRenderer.invoke ↔ ipcMain.handle)
@@ -58,6 +60,10 @@ export const invokeContract = {
   'app:checkBinaries': {
     request: z.void(),
     response: z.object({ ok: z.boolean(), missing: z.array(z.string()) }),
+  },
+  'app:capabilities': {
+    request: z.void(),
+    response: z.object({ hardwareEncoders: z.array(videoEncoder) }),
   },
   'app:fileExists': {
     request: z.object({ path: z.string() }),
@@ -135,8 +141,9 @@ export const invokeContract = {
       outro: videoInfoSchema.nullable(),
       audio: audioSelectionSchema,
       outputPath: z.string(),
+      encoder: videoEncoder,
     }),
-    response: z.object({ outputPath: z.string() }),
+    response: z.object({ outputPath: z.string(), encoder: videoEncoder }),
   },
   'export:cancel': {
     request: z.object({ jobId }),

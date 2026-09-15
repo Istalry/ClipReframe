@@ -1,5 +1,6 @@
 import type { VideoInfo } from '@shared/types';
 
+import { useAppStore } from './app';
 import { useJobStore } from './jobs';
 import { useProjectStore } from './project';
 import { useToastStore } from './toasts';
@@ -30,6 +31,7 @@ beforeEach(() => {
   invoke.mockReset();
   useToastStore.setState({ toasts: [] });
   useJobStore.setState({ transcribeJob: null, exportJob: null });
+  useAppStore.setState({ hardwareEncoders: ['h264_nvenc'], encoderPreference: 'auto' });
   useProjectStore.setState({
     source,
     cues: [],

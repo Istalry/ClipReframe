@@ -1,3 +1,4 @@
+import { useAppStore } from './store/app';
 import { useJobStore } from './store/jobs';
 import { usePlayerStore } from './store/player';
 import { usePresetStore } from './store/presets';
@@ -5,6 +6,7 @@ import { useProjectStore } from './store/project';
 import { useToastStore } from './store/toasts';
 
 const stores = {
+  app: useAppStore,
   project: useProjectStore,
   presets: usePresetStore,
   jobs: useJobStore,

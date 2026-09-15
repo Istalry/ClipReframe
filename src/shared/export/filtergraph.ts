@@ -3,6 +3,8 @@ import { MAX_OUTPUT_FPS, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '../constants';
 import { getOutputRegions, toPixelRect, type OutputRegion } from '../geometry/layout';
 import type { AudioSelection, PixelRect, ProjectSettings, VideoInfo } from '../types';
 
+import { encoderArgs, type VideoEncoder } from './encoders';
+
 export interface ExportArgsInput {
   source: VideoInfo;
   settings: ProjectSettings;
@@ -17,6 +19,8 @@ export interface ExportArgsInput {
   /** Absolute directory containing system fonts, e.g. `C:\Windows\Fonts`. */
   fontsDir: string;
   outputPath: string;
+  /** H.264 encoder; defaults to x264 so callers without hardware detection keep 0.1.0 output. */
+  encoder?: VideoEncoder | undefined;
 }
 
 /**
@@ -122,16 +126,7 @@ export function buildExportArgs(input: ExportArgsInput): string[] {
     '[v]',
     '-map',
     '[a]',
-    '-c:v',
-    'libx264',
-    '-preset',
-    'slow',
-    '-crf',
-    '17',
-    '-profile:v',
-    'high',
-    '-level',
-    '4.2',
+    ...encoderArgs(input.encoder ?? 'libx264'),
     '-pix_fmt',
     'yuv420p',
     '-r',

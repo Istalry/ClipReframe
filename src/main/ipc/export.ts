@@ -7,7 +7,7 @@ export function registerExportHandlers(): void {
   handle('export:start', async ({ jobId, ...request }, event) => {
     const signal = jobs.start(jobId);
     try {
-      const outputPath = await runExport({
+      return await runExport({
         jobId,
         request,
         signal,
@@ -15,7 +15,6 @@ export function registerExportHandlers(): void {
           emit(event.sender, 'export:progress', progress);
         },
       });
-      return { outputPath };
     } finally {
       jobs.finish(jobId);
     }

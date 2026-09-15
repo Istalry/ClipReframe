@@ -1,4 +1,5 @@
 import type { SubtitleLanguage } from './constants';
+import type { VideoEncoder } from './export/encoders';
 
 /** Rectangle normalised to the source frame: every value is in 0..1. */
 export interface Rect {
@@ -135,6 +136,7 @@ export interface ExportRequest {
   outro: VideoInfo | null;
   audio: AudioSelection;
   outputPath: string;
+  encoder: VideoEncoder;
 }
 
 export interface ExportProgress {

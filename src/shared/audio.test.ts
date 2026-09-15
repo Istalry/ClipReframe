@@ -1,7 +1,6 @@
 import { buildAudioMixFilter, defaultAudioSelection, formatTrackList } from './audio';
 import type { VideoInfo } from './types';
 
-
 const track = (index: number): VideoInfo['audioTracks'][number] => ({
   index,
   codec: 'aac',

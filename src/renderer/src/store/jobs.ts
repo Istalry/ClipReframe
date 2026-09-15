@@ -1,16 +1,19 @@
 ﻿import { create } from 'zustand';
 
 import { AppError } from '@shared/errors';
+import { VIDEO_ENCODER_LABELS, type VideoEncoder } from '@shared/export/encoders';
 import type { ExportProgress, TranscribeProgress } from '@shared/types';
 
 import { invoke, newJobId, subscribe } from '../api';
 
+import { useAppStore } from './app';
 import { useProjectStore } from './project';
 import { toastError, useToastStore } from './toasts';
 
 interface ExportJob {
   jobId: string;
   outputPath: string;
+  encoder: VideoEncoder;
   progress: ExportProgress | null;
 }
 
@@ -41,14 +44,15 @@ export const useJobStore = create<JobState>((set, get) => ({
       return;
     }
     const jobId = newJobId('export');
-    set({ exportJob: { jobId, outputPath, progress: null }, lastExportPath: null });
+    const encoder = useAppStore.getState().resolveEncoder();
+    set({ exportJob: { jobId, outputPath, encoder, progress: null }, lastExportPath: null });
     const unsubscribe = subscribe('export:progress', (progress) => {
       if (progress.jobId === jobId) {
         set((s) => (s.exportJob ? { exportJob: { ...s.exportJob, progress } } : {}));
       }
     });
     try {
-      await invoke('export:start', {
+      const result = await invoke('export:start', {
         jobId,
         source: project.source,
         settings: project.settings,
@@ -56,9 +60,18 @@ export const useJobStore = create<JobState>((set, get) => ({
         outro: project.settings.outro ? project.outroInfo : null,
         audio: project.audio,
         outputPath,
+        encoder,
       });
       set({ lastExportPath: outputPath });
-      useToastStore.getState().push('success', 'Export complete', outputPath);
+      const toasts = useToastStore.getState();
+      toasts.push('success', 'Export complete', outputPath);
+      if (result.encoder !== encoder) {
+        toasts.push(
+          'info',
+          `${VIDEO_ENCODER_LABELS[encoder]} failed, exported with the CPU instead`,
+          'Switch the encoder to CPU in the export bar if this keeps happening.',
+        );
+      }
     } catch (err) {
       if (!(err instanceof AppError && err.code === 'EXPORT_CANCELLED')) {
         toastError(err, 'Export failed');

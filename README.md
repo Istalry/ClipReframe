@@ -19,7 +19,8 @@ See **[HOW-TO-USE.md](HOW-TO-USE.md)** for the user guide (**[version française
   highlight (box / text colour / outline colour) and burned in.
 - Multi-track recordings (OBS mic / Discord / game): pick which tracks feed the subtitles and which are mixed into the export.
 - Optional call-to-action outro (drop or pick a vertical video) appended to every export.
-- Export: single MP4 — H.264 High, CRF 17 / preset slow, yuv420p, AAC 48 kHz, `+faststart` — valid for both platforms.
+- Export: single MP4 — H.264 High, yuv420p, AAC 48 kHz, `+faststart` — valid for both platforms; encoded on the GPU
+  (NVENC / AMF / Quick Sync) when one works, x264 CRF 17 otherwise.
 
 Ships as a single portable Windows `.exe`; nothing to install.
 
@@ -70,7 +71,8 @@ launch (kept between runs).
 ## Limitations
 
 - Windows x64 only.
-- CPU encoding (libx264) and CPU speech recognition; no GPU acceleration yet.
+- Speech recognition runs on the CPU (no GPU whisper build yet). Video encoding uses the GPU
+  when available, x264 otherwise.
 - Preview playback relies on Chromium decoders: H.264 / VP9 / AV1 play; some HEVC or 10-bit sources
   will not preview (export still works). No proxy transcoding yet.
 - The whole clip is exported; no in-app trimming.

@@ -104,6 +104,12 @@ the path in the bottom bar opens the folder.
 Output: 1080×1920, H.264 High profile, CRF 17 (visually lossless), yuv420p, source frame rate
 (capped at 60), AAC 192 kbps 48 kHz, `faststart` — accepted as-is by TikTok and YouTube Shorts.
 
+**GPU encoding.** On start-up the app tests the GPU encoders (NVIDIA NVENC, AMD AMF, Intel Quick
+Sync) and uses the first one that works — several times faster than the CPU at an equivalent
+constant-quality setting. The selector next to **Export** switches between **GPU** and
+**CPU (x264)**; it is remembered per PC. If the GPU encoder fails mid-way the export is redone
+on the CPU automatically and a notice tells you. Speech recognition always runs on the CPU.
+
 ## Troubleshooting
 
 | Symptom                                                     | Cause / fix                                                                                                              |

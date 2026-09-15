@@ -112,6 +112,13 @@ Sortie : 1080×1920, H.264 profil High, CRF 17 (visuellement sans perte), yuv420
 d'images de la source (plafonnée à 60), AAC 192 kbps 48 kHz, `faststart` — accepté tel quel par
 TikTok et YouTube Shorts.
 
+**Encodage GPU.** Au lancement, l'application teste les encodeurs GPU (NVIDIA NVENC, AMD AMF,
+Intel Quick Sync) et utilise le premier qui fonctionne — plusieurs fois plus rapide que le
+processeur à qualité constante équivalente. Le sélecteur à côté d'**Export** bascule entre
+**GPU** et **CPU (x264)** ; le choix est mémorisé sur ce PC. Si l'encodeur GPU échoue en cours de
+route, l'export est refait sur le processeur automatiquement et un message vous prévient. La
+reconnaissance vocale tourne toujours sur le processeur.
+
 ## Dépannage
 
 | Symptôme                                                  | Cause / solution                                                                                                                 |

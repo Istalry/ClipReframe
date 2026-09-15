@@ -1,12 +1,16 @@
-import { Download, FolderOpen, X } from 'lucide-react';
+import { Cpu, Download, FolderOpen, X } from 'lucide-react';
 import type { ReactNode } from 'react';
+
+import { VIDEO_ENCODER_LABELS } from '@shared/export/encoders';
 
 import { invoke } from '../../api';
 import { defaultOutputName } from '../../lib/format';
+import { useAppStore, type EncoderPreference } from '../../store/app';
 import { useJobStore } from '../../store/jobs';
 import { useProjectStore } from '../../store/project';
 import { toastError } from '../../store/toasts';
 import { Button } from '../ui/Button';
+import { Select } from '../ui/Field';
 
 const LAST_FOLDER_KEY = 'clipreframe.lastExportFolder';
 
@@ -33,6 +37,17 @@ export function ExportBar(): ReactNode {
   const lastExportPath = useJobStore((s) => s.lastExportPath);
   const startExport = useJobStore((s) => s.startExport);
   const cancelExport = useJobStore((s) => s.cancelExport);
+  const hardwareEncoders = useAppStore((s) => s.hardwareEncoders);
+  const encoderPreference = useAppStore((s) => s.encoderPreference);
+  const setEncoderPreference = useAppStore((s) => s.setEncoderPreference);
+  const encoder = useAppStore((s) => s.resolveEncoder)();
+
+  // Only offer the choice once detection found a GPU encoder; otherwise it is CPU anyway.
+  const gpuLabel = hardwareEncoders?.[0] ? VIDEO_ENCODER_LABELS[hardwareEncoders[0]] : null;
+  const encoderOptions: { value: EncoderPreference; label: string }[] = [
+    { value: 'auto', label: gpuLabel ? `GPU · ${gpuLabel}` : 'GPU (none detected)' },
+    { value: 'cpu', label: VIDEO_ENCODER_LABELS.libx264 },
+  ];
 
   const onExport = async (): Promise<void> => {
     if (!source) {
@@ -58,7 +73,10 @@ export function ExportBar(): ReactNode {
         <>
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <div className="flex justify-between text-xs">
-              <span className="truncate">Exporting {job.outputPath}</span>
+              <span className="truncate">
+                Exporting {job.outputPath}
+                <span className="text-muted"> · {VIDEO_ENCODER_LABELS[job.encoder]}</span>
+              </span>
               <span className="text-muted tabular-nums">
                 {percent}% {job.progress?.speed && `· ${job.progress.speed}`}
               </span>
@@ -91,9 +109,20 @@ export function ExportBar(): ReactNode {
                 <FolderOpen size={13} /> {lastExportPath}
               </button>
             ) : (
-              source && '1080×1920 · H.264 · AAC — ready for TikTok and YouTube Shorts'
+              source &&
+              `1080×1920 · H.264 (${VIDEO_ENCODER_LABELS[encoder]}) · AAC — ready for TikTok and YouTube Shorts`
             )}
           </div>
+          {hardwareEncoders && hardwareEncoders.length > 0 && (
+            <label className="text-muted flex items-center gap-1.5 text-xs" title="Video encoder">
+              <Cpu size={13} />
+              <Select<EncoderPreference>
+                value={encoderPreference}
+                options={encoderOptions}
+                onChange={setEncoderPreference}
+              />
+            </label>
+          )}
           <Button
             variant="primary"
             size="lg"

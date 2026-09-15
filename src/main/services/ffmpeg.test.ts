@@ -36,6 +36,7 @@ const request = (overrides: Partial<ExportRequest> = {}): ExportRequest => ({
   outro: null,
   audio: { transcribeTracks: [0], exportTracks: [0] },
   outputPath: join(tempRoot, 'out.mp4'),
+  encoder: 'libx264',
   ...overrides,
 });
 
@@ -63,7 +64,7 @@ describe('runExport', () => {
       signal: new AbortController().signal,
       onProgress: (p) => progress.push(p.fraction),
     });
-    expect(out).toBe(join(tempRoot, 'out.mp4'));
+    expect(out).toEqual({ outputPath: join(tempRoot, 'out.mp4'), encoder: 'libx264' });
     const [cmd, args, options] = run.mock.calls[0]!;
     expect(cmd).toMatch(/ffmpeg\.exe$/);
     expect(options.cwd).toBe(tempRoot);
@@ -101,6 +102,34 @@ describe('runExport', () => {
       onProgress: () => undefined,
     });
     expect(run.mock.calls[0]![1].join(' ')).not.toContain('subtitles=');
+  });
+
+  it('falls back to x264 once when a GPU encoder fails, and reports it', async () => {
+    run
+      .mockRejectedValueOnce(new AppError('EXPORT_FAILED', 'h264_nvenc: driver error'))
+      .mockResolvedValueOnce({ stdout: '', stderr: '' });
+    const out = await runExport({
+      jobId: 'j5',
+      request: request({ encoder: 'h264_nvenc' }),
+      signal: new AbortController().signal,
+      onProgress: () => undefined,
+    });
+    expect(out.encoder).toBe('libx264');
+    expect(run.mock.calls[0]![1]).toContain('h264_nvenc');
+    expect(run.mock.calls[1]![1]).toContain('libx264');
+  });
+
+  it('does not retry an x264 failure', async () => {
+    run.mockRejectedValue(new AppError('EXPORT_FAILED', 'boom'));
+    await expect(
+      runExport({
+        jobId: 'j6',
+        request: request(),
+        signal: new AbortController().signal,
+        onProgress: () => undefined,
+      }),
+    ).rejects.toMatchObject({ code: 'EXPORT_FAILED' });
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('removes the partial output and rethrows on failure or cancel', async () => {
