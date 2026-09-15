@@ -26,7 +26,7 @@ const source: VideoInfo = {
   duration: 10,
   fps: 30,
   videoCodec: 'h264',
-  hasAudio: true,
+  audioTracks: [{ index: 0, codec: 'aac', channels: 2, sampleRate: 48000, label: null }],
 };
 
 const request = (overrides: Partial<ExportRequest> = {}): ExportRequest => ({
@@ -34,6 +34,7 @@ const request = (overrides: Partial<ExportRequest> = {}): ExportRequest => ({
   settings: createDefaultSettings(),
   cues: [],
   outro: null,
+  audio: { transcribeTracks: [0], exportTracks: [0] },
   outputPath: join(tempRoot, 'out.mp4'),
   ...overrides,
 });

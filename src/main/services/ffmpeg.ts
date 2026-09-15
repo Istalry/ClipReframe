@@ -40,6 +40,7 @@ export async function runExport(options: ExportJobOptions): Promise<string> {
       source: request.source,
       settings: request.settings,
       outro: request.outro,
+      audio: request.audio,
       subtitlesFile: useSubtitles ? SUBTITLES_FILE : null,
       fontsDir: getSystemFontsDir(),
       outputPath: request.outputPath,

@@ -1,5 +1,6 @@
 ﻿import { create } from 'zustand';
 
+import { defaultAudioSelection } from '@shared/audio';
 import {
   clampSplitRatio,
   fitRectToAspect,
@@ -10,6 +11,7 @@ import {
 } from '@shared/geometry/layout';
 import { createDefaultSettings } from '@shared/presets/schema';
 import type {
+  AudioSelection,
   LayoutMode,
   ProjectSettings,
   Rect,
@@ -37,6 +39,10 @@ export interface ProjectState {
   dirty: boolean;
   selectedRect: RegionKind | null;
   loadingSource: boolean;
+  /** Per-clip track choice; never part of a preset. */
+  audio: AudioSelection;
+  /** True while the track dialog should be shown (multi-track clip just loaded, or "change"). */
+  pendingAudioChoice: boolean;
 
   loadSource: (path: string) => Promise<void>;
   clearSource: () => void;
@@ -52,7 +58,12 @@ export interface ProjectState {
   deleteCue: (id: string) => void;
   setOutro: (path: string | null) => Promise<void>;
   markSaved: (presetId: string) => void;
+  setAudioSelection: (audio: AudioSelection) => void;
+  openAudioChoice: () => void;
+  dismissAudioChoice: () => void;
 }
+
+const NO_AUDIO: AudioSelection = { transcribeTracks: [], exportTracks: [] };
 
 const frameOf = (source: VideoInfo | null): FrameSize => source ?? DEFAULT_FRAME;
 
@@ -106,6 +117,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     dirty: false,
     selectedRect: null,
     loadingSource: false,
+    audio: NO_AUDIO,
+    pendingAudioChoice: false,
 
     loadSource: async (path) => {
       set({ loadingSource: true });
@@ -116,6 +129,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           cues: [],
           selectedRect: null,
           settings: refitRects(state.settings, info),
+          audio: defaultAudioSelection(info),
+          pendingAudioChoice: info.audioTracks.length > 1,
         }));
         if (Math.abs(info.width / info.height - 16 / 9) > 0.02) {
           useToastStore
@@ -134,7 +149,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     },
 
     clearSource: () => {
-      set({ source: null, cues: [], selectedRect: null });
+      set({
+        source: null,
+        cues: [],
+        selectedRect: null,
+        audio: NO_AUDIO,
+        pendingAudioChoice: false,
+      });
     },
 
     applySettings: async (settings, presetId) => {
@@ -207,6 +228,18 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
     markSaved: (presetId) => {
       set({ activePresetId: presetId, dirty: false });
+    },
+
+    setAudioSelection: (audio) => {
+      set({ audio, pendingAudioChoice: false });
+    },
+
+    openAudioChoice: () => {
+      set({ pendingAudioChoice: true });
+    },
+
+    dismissAudioChoice: () => {
+      set({ pendingAudioChoice: false });
     },
   };
 });

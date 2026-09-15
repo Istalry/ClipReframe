@@ -17,6 +17,23 @@ TikTok and YouTube Shorts. No install: run `ClipReframe-<version>-portable.exe`.
   overlay confirms it). The right-hand panel is excluded from that overlay so you can still drop
   an outro there.
 
+### Multi-track audio
+
+If the clip carries **several audio tracks** (typical OBS recording: mix / mic / Discord / game), an
+**Audio tracks** popup opens right after loading. It has two checkbox columns, all ticked by default:
+
+| Column        | What the ticked tracks are used for                                                            |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| **Subtitles** | Mixed together and fed to speech recognition — tick only the voice tracks for cleaner results. |
+| **Export**    | Summed into the exported video's single stereo track — usually everything.                     |
+
+Track names come from the file's stream titles when the recorder wrote them. The choice is per clip
+(not saved in configurations) and is summarised in the Subtitles panel as
+"Audio: subtitles from tracks 1+2 · export 1+2+3"; click **change** to reopen the popup.
+Generating subtitles with no track ticked shows an error; exporting with no track ticked produces a
+silent video (the popup warns you). Single-track clips never show the popup. The in-app player only
+plays the file's default track; the export and the subtitles follow your selection.
+
 ## 2. Frame the two rectangles
 
 The centre shows your source; the right shows the vertical result live.

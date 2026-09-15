@@ -53,6 +53,7 @@ describe('runTranscription', () => {
       jobId: 'w1',
       sourcePath: 'C:\\clips\\in.mp4',
       language: 'fr',
+      audioTracks: [1],
       signal: new AbortController().signal,
       onProgress: (p) => phases.push(`${p.phase}:${p.fraction}`),
     });
@@ -64,11 +65,52 @@ describe('runTranscription', () => {
 
     const [ffmpegCall, whisperCall] = run.mock.calls;
     expect(ffmpegCall![0]).toMatch(/ffmpeg\.exe$/);
-    expect(ffmpegCall![1]).toEqual(expect.arrayContaining(['-ac', '1', '-ar', '16000']));
+    expect(ffmpegCall![1]).toEqual(
+      expect.arrayContaining(['-map', '0:a:1', '-ac', '1', '-ar', '16000']),
+    );
+    expect(ffmpegCall![1]).not.toContain('-filter_complex');
     expect(whisperCall![0]).toMatch(/whisper-cli\.exe$/);
     expect(whisperCall![1]).toEqual(
       expect.arrayContaining(['-l', 'fr', '--output-json', '--print-progress']),
     );
+  });
+
+  it('mixes several tracks down to mono before recognition', async () => {
+    run.mockImplementation(async (cmd) => {
+      if (cmd.endsWith('whisper-cli.exe')) {
+        await writeFile(join(tempRoot, 'out.json'), JSON.stringify(whisperJson));
+      }
+      return { stdout: '', stderr: '' };
+    });
+    await runTranscription({
+      jobId: 'w4',
+      sourcePath: 'x.mp4',
+      language: 'fr',
+      audioTracks: [0, 2],
+      signal: new AbortController().signal,
+      onProgress: () => undefined,
+    });
+    const args = run.mock.calls[0]![1];
+    const graph = args[args.indexOf('-filter_complex') + 1];
+    expect(graph).toContain('[0:a:0]');
+    expect(graph).toContain('[0:a:2]');
+    expect(graph).toContain('channel_layouts=mono');
+    expect(graph).toContain('amix=inputs=2');
+    expect(args).toEqual(expect.arrayContaining(['-map', '[a]']));
+  });
+
+  it('refuses an empty track list without spawning anything', async () => {
+    await expect(
+      runTranscription({
+        jobId: 'w5',
+        sourcePath: 'x.mp4',
+        language: 'fr',
+        audioTracks: [],
+        signal: new AbortController().signal,
+        onProgress: () => undefined,
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+    expect(run).not.toHaveBeenCalled();
   });
 
   it('fails clearly when no model is bundled', async () => {
@@ -78,6 +120,7 @@ describe('runTranscription', () => {
         jobId: 'w2',
         sourcePath: 'x.mp4',
         language: 'fr',
+        audioTracks: [0],
         signal: new AbortController().signal,
         onProgress: () => undefined,
       }),
@@ -97,6 +140,7 @@ describe('runTranscription', () => {
         jobId: 'w3',
         sourcePath: 'x.mp4',
         language: 'fr',
+        audioTracks: [0],
         signal: new AbortController().signal,
         onProgress: () => undefined,
       }),

@@ -19,6 +19,25 @@ prête pour TikTok et YouTube Shorts. Rien à installer : lancez `ClipReframe-<v
   to replace » le confirme). Le panneau de droite n'est pas couvert par ce voile : vous pouvez donc
   toujours y déposer un outro.
 
+### Audio multipiste
+
+Si le clip contient **plusieurs pistes audio** (enregistrement OBS typique : mix / micro / Discord /
+jeu), une fenêtre **Audio tracks** s'ouvre juste après le chargement. Elle comporte deux colonnes de
+cases à cocher, toutes cochées par défaut :
+
+| Colonne       | Usage des pistes cochées                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Subtitles** | Mixées ensemble puis envoyées à la reconnaissance vocale — ne cochez que les voix pour un meilleur résultat. |
+| **Export**    | Sommées dans l'unique piste stéréo de la vidéo exportée — en général tout.                                   |
+
+Les noms de pistes proviennent des titres de flux écrits par le logiciel d'enregistrement. Le choix
+est propre au clip (il n'est pas enregistré dans les configurations) et se résume dans le panneau
+Subtitles : « Audio: subtitles from tracks 1+2 · export 1+2+3 » ; cliquez sur **change** pour rouvrir
+la fenêtre. Générer des sous-titres sans aucune piste cochée affiche une erreur ; exporter sans piste
+cochée produit une vidéo muette (la fenêtre vous prévient). Les clips à une seule piste n'affichent
+jamais la fenêtre. Le lecteur intégré ne lit que la piste par défaut du fichier ; l'export et les
+sous-titres suivent votre sélection.
+
 ## 2. Cadrer les deux rectangles
 
 Au centre : votre source. À droite : le résultat vertical, en direct.

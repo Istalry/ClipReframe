@@ -54,6 +54,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         settings: project.settings,
         cues: project.settings.subtitles.enabled ? project.cues : [],
         outro: project.settings.outro ? project.outroInfo : null,
+        audio: project.audio,
         outputPath,
       });
       set({ lastExportPath: outputPath });
@@ -80,6 +81,19 @@ export const useJobStore = create<JobState>((set, get) => ({
     if (!project.source || get().transcribeJob) {
       return;
     }
+    const toasts = useToastStore.getState();
+    if (project.source.audioTracks.length === 0) {
+      toasts.push('error', 'This clip has no audio', 'Nothing to transcribe.');
+      return;
+    }
+    if (project.audio.transcribeTracks.length === 0) {
+      toasts.push(
+        'error',
+        'Select at least one audio track for subtitles',
+        'Use "change" next to the audio line to pick the tracks.',
+      );
+      return;
+    }
     const jobId = newJobId('whisper');
     set({ transcribeJob: { jobId, progress: null } });
     const unsubscribe = subscribe('subtitles:progress', (progress) => {
@@ -92,6 +106,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         jobId,
         path: project.source.path,
         language: project.settings.subtitles.language,
+        audioTracks: project.audio.transcribeTracks,
       });
       useProjectStore.getState().setCues(result.cues);
       const cleaned = result.removedCount > 0 ? `, ${result.removedCount} cleaned up` : '';

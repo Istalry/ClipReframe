@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { buildAudioMixFilter } from '@shared/audio';
 import type { SubtitleLanguage } from '@shared/constants';
 import { AppError } from '@shared/errors';
 import { cleanupCues } from '@shared/subtitles/cleanup';
@@ -16,12 +17,31 @@ export interface TranscribeJobOptions {
   jobId: string;
   sourcePath: string;
   language: SubtitleLanguage;
+  /** Audio-relative stream indices mixed together before recognition. Must not be empty. */
+  audioTracks: readonly number[];
   signal: AbortSignal;
   onProgress: (progress: TranscribeProgress) => void;
 }
 
-/** whisper.cpp wants 16 kHz mono PCM. */
-async function extractAudio(source: string, wavPath: string, signal: AbortSignal): Promise<void> {
+/**
+ * whisper.cpp wants 16 kHz mono PCM. A single track is mapped directly; several are mixed with
+ * the same helper the export uses so subtitles match what the viewer hears.
+ */
+async function extractAudio(
+  source: string,
+  wavPath: string,
+  tracks: readonly number[],
+  signal: AbortSignal,
+): Promise<void> {
+  const mapping =
+    tracks.length === 1
+      ? ['-map', `0:a:${tracks[0]}`]
+      : [
+          '-filter_complex',
+          buildAudioMixFilter(0, tracks, 'a', { mono: true, silenceDuration: 1 }),
+          '-map',
+          '[a]',
+        ];
   await run(
     getBinaryPath('ffmpeg'),
     [
@@ -31,6 +51,7 @@ async function extractAudio(source: string, wavPath: string, signal: AbortSignal
       '-y',
       '-i',
       source,
+      ...mapping,
       '-vn',
       '-ac',
       '1',
@@ -45,7 +66,10 @@ async function extractAudio(source: string, wavPath: string, signal: AbortSignal
 }
 
 export async function runTranscription(options: TranscribeJobOptions): Promise<TranscribeResult> {
-  const { jobId, sourcePath, language, signal, onProgress } = options;
+  const { jobId, sourcePath, language, audioTracks, signal, onProgress } = options;
+  if (audioTracks.length === 0) {
+    throw new AppError('INVALID_INPUT', 'Select at least one audio track for subtitles');
+  }
   const model = getWhisperModelPath();
   if (!model) {
     throw new AppError('BINARY_MISSING', 'No whisper model (ggml-*.bin) found');
@@ -55,7 +79,7 @@ export async function runTranscription(options: TranscribeJobOptions): Promise<T
   try {
     const wav = join(temp.path, 'audio.wav');
     onProgress({ jobId, phase: 'extracting', fraction: 0 });
-    await extractAudio(sourcePath, wav, signal);
+    await extractAudio(sourcePath, wav, audioTracks, signal);
 
     onProgress({ jobId, phase: 'transcribing', fraction: 0 });
     const outBase = join(temp.path, 'out');

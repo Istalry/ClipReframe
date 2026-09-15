@@ -2,6 +2,7 @@ import { AlertTriangle, Film, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { invoke } from './api';
+import { AudioTrackDialog } from './components/AudioTrackDialog/AudioTrackDialog';
 import { DropZone } from './components/DropZone/DropZone';
 import { ExportBar } from './components/ExportBar/ExportBar';
 import { LayoutPanel } from './components/LayoutControls/LayoutPanel';
@@ -31,6 +32,10 @@ function BinaryWarning({ missing }: { missing: string[] }): ReactNode {
 export function App(): ReactNode {
   const source = useProjectStore((s) => s.source);
   const clearSource = useProjectStore((s) => s.clearSource);
+  const audio = useProjectStore((s) => s.audio);
+  const pendingAudioChoice = useProjectStore((s) => s.pendingAudioChoice);
+  const setAudioSelection = useProjectStore((s) => s.setAudioSelection);
+  const dismissAudioChoice = useProjectStore((s) => s.dismissAudioChoice);
   const loadPresets = usePresetStore((s) => s.load);
   const [missingBinaries, setMissingBinaries] = useState<string[]>([]);
 
@@ -111,6 +116,14 @@ export function App(): ReactNode {
 
       <ExportBar />
       <Toasts />
+      {pendingAudioChoice && source && (
+        <AudioTrackDialog
+          source={source}
+          initial={audio}
+          onConfirm={setAudioSelection}
+          onCancel={dismissAudioChoice}
+        />
+      )}
       {dragging && source && (
         // Covers everything except the right sidebar, so the outro panel stays a drop target.
         <div className="bg-bg/70 border-accent pointer-events-none fixed inset-y-0 left-0 z-40 flex w-[calc(100%-20rem)] items-center justify-center border-4 border-dashed text-lg font-semibold">

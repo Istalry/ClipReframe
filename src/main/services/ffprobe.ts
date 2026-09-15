@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import { z } from 'zod';
 
 import { AppError } from '@shared/errors';
-import type { VideoInfo } from '@shared/types';
+import type { AudioTrack, VideoInfo } from '@shared/types';
 
 import { getBinaryPath } from '../binaries';
 
@@ -17,7 +17,15 @@ const streamSchema = z.object({
   r_frame_rate: z.string().optional(),
   avg_frame_rate: z.string().optional(),
   duration: z.string().optional(),
-  tags: z.looseObject({ rotate: z.string().optional() }).optional(),
+  channels: z.number().optional(),
+  sample_rate: z.string().optional(),
+  tags: z
+    .looseObject({
+      rotate: z.string().optional(),
+      title: z.string().optional(),
+      language: z.string().optional(),
+    })
+    .optional(),
   side_data_list: z.array(z.looseObject({ rotation: z.number().optional() })).optional(),
 });
 
@@ -51,7 +59,16 @@ export function toVideoInfo(path: string, raw: unknown): VideoInfo {
   if (!video?.width || !video.height) {
     throw new AppError('UNSUPPORTED_MEDIA', 'No video stream found in this file');
   }
-  const hasAudio = parsed.data.streams.some((s) => s.codec_type === 'audio');
+  // Index is relative to the audio streams (what `0:a:<n>` expects), not the absolute index.
+  const audioTracks: AudioTrack[] = parsed.data.streams
+    .filter((s) => s.codec_type === 'audio')
+    .map((s, index) => ({
+      index,
+      codec: s.codec_name ?? 'unknown',
+      channels: s.channels ?? 0,
+      sampleRate: Number(s.sample_rate ?? 0) || 0,
+      label: s.tags?.title ?? s.tags?.language ?? null,
+    }));
   const duration = Number(parsed.data.format.duration ?? video.duration ?? 0);
 
   // Phone footage often stores a rotation instead of rotated pixels; swap dimensions to match.
@@ -68,7 +85,7 @@ export function toVideoInfo(path: string, raw: unknown): VideoInfo {
     duration: Number.isFinite(duration) ? duration : 0,
     fps: parseFrameRate(video.avg_frame_rate) || parseFrameRate(video.r_frame_rate),
     videoCodec: video.codec_name ?? 'unknown',
-    hasAudio,
+    audioTracks,
   };
 }
 

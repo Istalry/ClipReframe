@@ -1,6 +1,7 @@
-import { Sparkles, X } from 'lucide-react';
+import { AudioLines, Sparkles, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { formatTrackList } from '@shared/audio';
 import {
   SUBTITLE_LANGUAGE_CODES,
   SUBTITLE_LANGUAGE_LABELS,
@@ -30,6 +31,9 @@ export function SubtitlePanel(): ReactNode {
   const subtitles = useProjectStore((s) => s.settings.subtitles);
   const cues = useProjectStore((s) => s.cues);
   const hasSource = useProjectStore((s) => s.source !== null);
+  const trackCount = useProjectStore((s) => s.source?.audioTracks.length ?? 0);
+  const audio = useProjectStore((s) => s.audio);
+  const openAudioChoice = useProjectStore((s) => s.openAudioChoice);
   const updateSubtitles = useProjectStore((s) => s.updateSubtitles);
 
   const job = useJobStore((s) => s.transcribeJob);
@@ -63,6 +67,24 @@ export function SubtitlePanel(): ReactNode {
               }}
             />
           </Field>
+
+          {trackCount > 1 && (
+            <div className="text-muted flex items-center gap-1 text-xs">
+              <AudioLines size={12} />
+              <span>
+                Audio: subtitles from tracks {formatTrackList(audio.transcribeTracks)} · export{' '}
+                {formatTrackList(audio.exportTracks)}
+              </span>
+              <button
+                type="button"
+                className="text-accent hover:underline"
+                disabled={job !== null}
+                onClick={openAudioChoice}
+              >
+                change
+              </button>
+            </div>
+          )}
 
           {job ? (
             <div className="bg-panel-2 flex flex-col gap-1 rounded-md p-2">

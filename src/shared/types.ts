@@ -18,6 +18,16 @@ export interface PixelRect {
 
 export type LayoutMode = 'split' | 'fill';
 
+export interface AudioTrack {
+  /** Index among the file's audio streams (0-based) → ffmpeg `0:a:<index>`. */
+  index: number;
+  codec: string;
+  channels: number;
+  sampleRate: number;
+  /** From stream tags: title, else language, else null. */
+  label: string | null;
+}
+
 export interface VideoInfo {
   path: string;
   fileName: string;
@@ -27,7 +37,15 @@ export interface VideoInfo {
   duration: number;
   fps: number;
   videoCodec: string;
-  hasAudio: boolean;
+  audioTracks: AudioTrack[];
+}
+
+/** Which audio tracks of the source clip feed each pipeline. Per clip, not stored in presets. */
+export interface AudioSelection {
+  /** Mixed together and fed to speech-to-text; empty = cannot transcribe. */
+  transcribeTracks: number[];
+  /** Summed into the export; empty = silent output. */
+  exportTracks: number[];
 }
 
 export type SubtitleAlignment = 'top' | 'center' | 'bottom';
@@ -97,6 +115,7 @@ export interface ExportRequest {
   settings: ProjectSettings;
   cues: SubtitleCue[];
   outro: VideoInfo | null;
+  audio: AudioSelection;
   outputPath: string;
 }
 

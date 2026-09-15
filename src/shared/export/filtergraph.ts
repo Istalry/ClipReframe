@@ -1,11 +1,14 @@
+import { buildAudioMixFilter } from '../audio';
 import { MAX_OUTPUT_FPS, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '../constants';
 import { getOutputRegions, toPixelRect, type OutputRegion } from '../geometry/layout';
-import type { PixelRect, ProjectSettings, VideoInfo } from '../types';
+import type { AudioSelection, PixelRect, ProjectSettings, VideoInfo } from '../types';
 
 export interface ExportArgsInput {
   source: VideoInfo;
   settings: ProjectSettings;
   outro: VideoInfo | null;
+  /** Which source tracks end up in the output; the outro always contributes all of its tracks. */
+  audio: AudioSelection;
   /**
    * ASS file name **relative to the process cwd** (the service runs ffmpeg inside the temp dir),
    * which sidesteps ffmpeg filter-path escaping for user paths. `null` = no subtitles.
@@ -67,23 +70,34 @@ function buildMainVideoChain(input: ExportArgsInput, fps: number): string[] {
   return chains;
 }
 
-const AUDIO_FORMAT = 'aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo';
+/** Only tracks that exist survive — a stale selection must never produce an invalid `0:a:n`. */
+const existingTracks = (info: VideoInfo, wanted: readonly number[]): number[] =>
+  wanted.filter((t) => info.audioTracks.some((track) => track.index === t));
 
-const audioChain = (inputIndex: number, info: VideoInfo, label: string): string =>
-  info.hasAudio
-    ? `[${inputIndex}:a]${AUDIO_FORMAT}[${label}]`
-    : `anullsrc=r=48000:cl=stereo:d=${fmt(info.duration)}[${label}]`;
+const audioChain = (
+  inputIndex: number,
+  info: VideoInfo,
+  tracks: readonly number[],
+  label: string,
+): string =>
+  buildAudioMixFilter(inputIndex, existingTracks(info, tracks), label, {
+    silenceDuration: info.duration,
+  });
 
 function buildOutroChains(outro: VideoInfo, fps: number): string[] {
+  const allTracks = outro.audioTracks.map((t) => t.index);
   return [
     `[1:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${fmt(fps)},format=yuv420p[vout]`,
-    audioChain(1, outro, 'aout'),
+    audioChain(1, outro, allTracks, 'aout'),
   ];
 }
 
 export function buildFilterComplex(input: ExportArgsInput): string {
   const fps = pickOutputFps(input.source.fps);
-  const chains = [...buildMainVideoChain(input, fps), audioChain(0, input.source, 'amain')];
+  const chains = [
+    ...buildMainVideoChain(input, fps),
+    audioChain(0, input.source, input.audio.exportTracks, 'amain'),
+  ];
   if (input.outro) {
     chains.push(...buildOutroChains(input.outro, fps));
     chains.push('[vmain][amain][vout][aout]concat=n=2:v=1:a=1[v][a]');

@@ -19,7 +19,11 @@ const source: VideoInfo = {
   duration: 42,
   fps: 60,
   videoCodec: 'h264',
-  hasAudio: true,
+  audioTracks: [
+    { index: 0, codec: 'aac', channels: 2, sampleRate: 48000, label: null },
+    { index: 1, codec: 'aac', channels: 2, sampleRate: 48000, label: 'Mic' },
+    { index: 2, codec: 'aac', channels: 2, sampleRate: 48000, label: 'Game' },
+  ],
 };
 
 const outro: VideoInfo = {
@@ -30,13 +34,14 @@ const outro: VideoInfo = {
   duration: 3,
   fps: 30,
   videoCodec: 'h264',
-  hasAudio: false,
+  audioTracks: [],
 };
 
 const base = (): ExportArgsInput => ({
   source,
   settings: createDefaultSettings(),
   outro: null,
+  audio: { transcribeTracks: [0], exportTracks: [0] },
   subtitlesFile: null,
   fontsDir: 'C:\\Windows\\Fonts',
   outputPath: 'D:\\out\\my clip_vertical.mp4',
@@ -68,7 +73,8 @@ describe('buildFilterComplex', () => {
     expect(fc).toContain('[bot]');
     expect(fc).toContain('[top][bot]vstack=inputs=2[stacked]');
     expect(fc).toContain('[stacked]fps=60,format=yuv420p[vmain]');
-    expect(fc).toContain('[0:a]aformat=');
+    expect(fc).toContain('[0:a:0]aformat=');
+    expect(fc).not.toContain('amix');
     expect(fc).toContain('[vmain]null[v]');
     expect(fc).toContain('[amain]anull[a]');
     expect(fc).not.toContain('subtitles=');
@@ -105,8 +111,40 @@ describe('buildFilterComplex', () => {
   });
 
   it('silent source gets a generated audio track', () => {
-    const fc = buildFilterComplex({ ...base(), source: { ...source, hasAudio: false } });
+    const fc = buildFilterComplex({ ...base(), source: { ...source, audioTracks: [] } });
     expect(fc).toContain('anullsrc=r=48000:cl=stereo:d=42[amain]');
+  });
+
+  it('mixes the selected export tracks and ignores the transcription choice', () => {
+    const fc = buildFilterComplex({
+      ...base(),
+      audio: { transcribeTracks: [1], exportTracks: [0, 2] },
+    });
+    expect(fc).toContain('[0:a:0]aformat=');
+    expect(fc).toContain('[0:a:2]aformat=');
+    expect(fc).not.toContain('[0:a:1]');
+    expect(fc).toContain('[amain_0][amain_1]amix=inputs=2:normalize=0,alimiter=limit=0.95[amain]');
+  });
+
+  it('deselecting every track makes the export silent', () => {
+    const fc = buildFilterComplex({ ...base(), audio: { transcribeTracks: [0], exportTracks: [] } });
+    expect(fc).toContain('anullsrc=r=48000:cl=stereo:d=42[amain]');
+  });
+
+  it('drops selected tracks that the clip does not have', () => {
+    const fc = buildFilterComplex({ ...base(), audio: { transcribeTracks: [], exportTracks: [0, 7] } });
+    expect(fc).toContain('[0:a:0]aformat=');
+    expect(fc).not.toContain('amix');
+  });
+
+  it('an outro with several tracks is mixed entirely', () => {
+    const fc = buildFilterComplex({
+      ...base(),
+      outro: { ...outro, audioTracks: source.audioTracks },
+    });
+    expect(fc).toContain('[1:a:0]aformat=');
+    expect(fc).toContain('[1:a:2]aformat=');
+    expect(fc).toContain('amix=inputs=3:normalize=0,alimiter=limit=0.95[aout]');
   });
 });
 

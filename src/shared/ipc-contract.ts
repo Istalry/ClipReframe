@@ -8,6 +8,14 @@ import { presetSchema, presetsFileSchema, projectSettingsSchema } from './preset
 // Shared value schemas
 // ---------------------------------------------------------------------------------------------
 
+export const audioTrackSchema = z.object({
+  index: z.number().int().nonnegative(),
+  codec: z.string(),
+  channels: z.number().int().nonnegative(),
+  sampleRate: z.number().int().nonnegative(),
+  label: z.string().nullable(),
+});
+
 export const videoInfoSchema = z.object({
   path: z.string(),
   fileName: z.string(),
@@ -16,7 +24,14 @@ export const videoInfoSchema = z.object({
   duration: z.number().nonnegative(),
   fps: z.number().nonnegative(),
   videoCodec: z.string(),
-  hasAudio: z.boolean(),
+  audioTracks: z.array(audioTrackSchema),
+});
+
+const trackList = z.array(z.number().int().nonnegative());
+
+export const audioSelectionSchema = z.object({
+  transcribeTracks: trackList,
+  exportTracks: trackList,
 });
 
 export const subtitleCueSchema = z.object({
@@ -91,6 +106,7 @@ export const invokeContract = {
       jobId,
       path: z.string(),
       language: z.enum(SUBTITLE_LANGUAGE_CODES),
+      audioTracks: trackList.min(1, 'Select at least one audio track for subtitles'),
     }),
     response: z.object({
       cues: z.array(subtitleCueSchema),
@@ -110,6 +126,7 @@ export const invokeContract = {
       settings: projectSettingsSchema,
       cues: z.array(subtitleCueSchema),
       outro: videoInfoSchema.nullable(),
+      audio: audioSelectionSchema,
       outputPath: z.string(),
     }),
     response: z.object({ outputPath: z.string() }),
