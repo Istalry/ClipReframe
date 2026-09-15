@@ -3,7 +3,11 @@
 //
 // Usage:  node scripts/fetch-binaries.mjs [--force]
 // Env:    WHISPER_MODEL=tiny|base|small|medium   (default: small)
-//         FFMPEG_TAG=latest|autobuild-YYYY-MM-DD-HH-MM   (default: latest)
+//         FFMPEG_TAG=latest                              rolling BtbN master build instead of the pin
+//         FFMPEG_TAG=autobuild-YYYY-MM-DD-HH-MM FFMPEG_ASSET=<zip name>   any other pinned build
+//
+// Downloads are verified against the SHA-256 recorded in EXPECTED_SHA256 when the URL is one of
+// the pinned defaults; overriding the tag or model skips verification (a warning is printed).
 
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -21,12 +25,32 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const BIN_DIR = join(ROOT, 'resources', 'bin');
 const FORCE = process.argv.includes('--force');
 const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'small';
-const FFMPEG_TAG = process.env.FFMPEG_TAG ?? 'latest';
+// Pinned to the FFmpeg 9.0 release branch; BtbN names assets after the exact commit, so a tag
+// bump needs the matching asset name too.
+const FFMPEG_TAG = process.env.FFMPEG_TAG ?? 'autobuild-2026-09-15-13-18';
+const FFMPEG_ASSET =
+  process.env.FFMPEG_ASSET ??
+  (FFMPEG_TAG === 'latest'
+    ? 'ffmpeg-master-latest-win64-gpl-shared.zip'
+    : 'ffmpeg-n9.0.1-30-g9258bacca5-win64-gpl-shared-9.0.zip');
 const WHISPER_TAG = 'b5130';
 
-const FFMPEG_URL = `https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_TAG}/ffmpeg-master-latest-win64-gpl-shared.zip`;
+const FFMPEG_URL = `https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_TAG}/${FFMPEG_ASSET}`;
 const WHISPER_URL = `https://github.com/ggml-org/whisper.cpp/releases/download/${WHISPER_TAG}/whisper-bin-x64.zip`;
 const MODEL_URL = `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${WHISPER_MODEL}.bin`;
+
+/**
+ * Known-good digests of the pinned artefacts, keyed by their exact URL so that overriding the tag
+ * or model simply skips verification. Update when bumping a tag or the default model.
+ */
+const EXPECTED_SHA256 = {
+  'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-15-13-18/ffmpeg-n9.0.1-30-g9258bacca5-win64-gpl-shared-9.0.zip':
+    'b224cfe325bf9bd9818d6e48a9d6cdb5fa9feebff0d26cc50c793a47e1e6fc4f',
+  'https://github.com/ggml-org/whisper.cpp/releases/download/b5130/whisper-bin-x64.zip':
+    'f9ec6c52a2e949b62ab51fa21d0d497958f9e41c3010c157c4e42932d5316f3c',
+  'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin':
+    '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+};
 
 async function exists(path) {
   try {
@@ -61,7 +85,15 @@ async function download(url, dest) {
   });
   await pipeline(res.body.pipeThrough(progress), createWriteStream(dest));
   process.stdout.write('\r');
-  console.log(`  sha256 ${hash.digest('hex')}  (${Math.round(received / 1_000_000)} MB)`);
+  const digest = hash.digest('hex');
+  console.log(`  sha256 ${digest}  (${Math.round(received / 1_000_000)} MB)`);
+  const expected = EXPECTED_SHA256[url];
+  if (expected === undefined) {
+    console.warn('  ! no pinned checksum for this URL; skipping verification');
+  } else if (expected !== digest) {
+    await rm(dest, { force: true });
+    throw new Error(`Checksum mismatch for ${url}\n  expected ${expected}\n  got      ${digest}`);
+  }
 }
 
 async function unzip(zipPath, destDir) {
@@ -89,6 +121,8 @@ async function findFile(dir, name) {
   return null;
 }
 
+const isRuntimeDll = (name) => /\.dll$/i.test(name) && !/^SDL2\.dll$/i.test(name);
+
 async function copySiblings(file, filter) {
   const dir = dirname(file);
   for (const entry of await readdir(dir)) {
@@ -115,8 +149,9 @@ async function fetchFfmpeg(work) {
   if (!ffmpeg) {
     throw new Error('ffmpeg.exe not found in archive');
   }
-  // Shared build: copy the two executables we use and every DLL next to them (skip ffplay).
-  await copySiblings(ffmpeg, (n) => /\.dll$/i.test(n) || /^ff(mpeg|probe)\.exe$/i.test(n));
+  // Shared build: copy the two executables we use and every DLL next to them (skip ffplay and
+  // SDL2, which only ffplay needs).
+  await copySiblings(ffmpeg, (n) => isRuntimeDll(n) || /^ff(mpeg|probe)\.exe$/i.test(n));
   console.log('✓ ffmpeg/ffprobe installed');
 }
 
@@ -133,7 +168,7 @@ async function fetchWhisper(work) {
   if (!cli) {
     throw new Error('whisper-cli.exe not found in archive');
   }
-  await copySiblings(cli, (n) => /\.dll$/i.test(n) || /^whisper-cli\.exe$/i.test(n));
+  await copySiblings(cli, (n) => isRuntimeDll(n) || /^whisper-cli\.exe$/i.test(n));
   console.log('✓ whisper-cli installed');
 }
 
