@@ -1,6 +1,6 @@
 # Guide d'utilisation de ClipReframe
 
-n> 🇬🇧 [English version](HOW-TO-USE.md)
+> 🇬🇧 [English version](HOW-TO-USE.md)
 
 ClipReframe transforme un clip de stream 16:9 (gameplay + webcam) en vidéo verticale 1080×1920
 prête pour TikTok et YouTube Shorts. Rien à installer : lancez `ClipReframe-<version>-portable.exe`.
