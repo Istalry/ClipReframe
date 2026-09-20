@@ -203,6 +203,18 @@ export function StyleEditor(): ReactNode {
           />
         </Field>
       )}
+      <Field label="Vertical offset">
+        <Slider
+          value={style.offsetY}
+          min={-600}
+          max={600}
+          step={10}
+          onChange={(offsetY) => {
+            updateStyle({ offsetY });
+          }}
+          format={(v) => `${v > 0 ? '+' : ''}${v}px`}
+        />
+      </Field>
       <Field label="Max characters per line">
         <Slider
           value={style.maxLineChars}

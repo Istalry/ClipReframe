@@ -27,6 +27,7 @@ describe('projectSettingsSchema', () => {
     });
     expect(parsed.subtitles.style.highlightMode).toBe('box');
     expect(parsed.subtitles.style.highlightColor).toBe('#a970ff');
+    expect(parsed.subtitles.style.offsetY).toBe(0);
     expect(
       projectSettingsSchema.safeParse({
         ...s,

@@ -1,13 +1,6 @@
 import type { SubtitleCue, SubtitleHighlightMode, SubtitleStyle } from '../types';
 
-import {
-  BOX_PADDING,
-  boxEventPrefix,
-  dialogueLine,
-  escapeAssText,
-  hexToAssColor,
-  wrapWords,
-} from './ass-format';
+import { dialogueLine, escapeAssText, eventPrefix, hexToAssColor, wrapWords } from './ass-format';
 import { getWordIntervals } from './cues';
 
 export type ActiveHighlightMode = Exclude<SubtitleHighlightMode, 'none'>;
@@ -92,11 +85,13 @@ export function buildHighlightEvents(
   const lines = wrapWords(words, style.maxLineChars);
   // Override tags conventionally close the colour with a trailing `&`.
   const color = `${hexToAssColor(style.highlightColor)}&`;
-  const plain: WordTags = { prefix: boxEventPrefix(style), open: '', close: '' };
+  // Both layers of the box mode share the prefix so they land on the same spot.
+  const prefix = eventPrefix(style);
+  const plain: WordTags = { prefix, open: '', close: '' };
   const pill: WordTags = {
     prefix: style.backgroundBox
-      ? `{\\alpha&HFF&\\xbord${BOX_PADDING.x}}`
-      : `{\\alpha&HFF&\\xbord${pillPadding(style.fontSize)}\\ybord0}`,
+      ? `{\\alpha&HFF&}${prefix}`
+      : `{\\alpha&HFF&\\xbord${pillPadding(style.fontSize)}\\ybord0}${prefix}`,
     open: '{\\alpha&H00&}',
     close: INVISIBLE,
   };

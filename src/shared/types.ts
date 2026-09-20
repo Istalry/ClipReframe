@@ -73,6 +73,8 @@ export interface SubtitleStyle {
   alignment: SubtitleAlignment;
   /** Distance from the top/bottom edge in output pixels. */
   marginV: number;
+  /** Extra vertical shift in output pixels, positive = down, applied on top of the alignment. */
+  offsetY: number;
   /** Soft-wrap cues longer than this many characters. */
   maxLineChars: number;
   uppercase: boolean;

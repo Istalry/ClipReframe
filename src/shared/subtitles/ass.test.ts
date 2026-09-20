@@ -83,6 +83,19 @@ describe('buildAssStyleLine', () => {
     expect(fields.slice(15, 17)).toEqual(['1', '12']);
   });
 
+  it('folds the vertical offset into the margin, clamped at zero', () => {
+    const margin = (alignment: SubtitleStyle['alignment'], offsetY: number): string =>
+      buildAssStyleLine({ ...DEFAULT_SUBTITLE_STYLE, alignment, marginV: 100, offsetY }).split(
+        ',',
+      )[21] ?? '';
+    expect(margin('top', 40)).toBe('140');
+    expect(margin('top', -40)).toBe('60');
+    expect(margin('bottom', 40)).toBe('60');
+    expect(margin('bottom', -40)).toBe('140');
+    expect(margin('bottom', 500)).toBe('0');
+    expect(margin('center', 500)).toBe('100');
+  });
+
   it('encodes bold/italic as -1/0', () => {
     const line = buildAssStyleLine({ ...DEFAULT_SUBTITLE_STYLE, bold: true, italic: false });
     const fields = line.replace('Style: ', '').split(',');
@@ -203,7 +216,7 @@ describe('buildAss with a word highlight', () => {
       'Dialogue: 0,0:00:02.00,0:00:03.00,Default,,0,0,0,,{\\xbord10}un deux trois',
     );
     expect(lines[3]).toBe(
-      'Dialogue: 1,0:00:02.00,0:00:03.00,Pill,,0,0,0,,{\\alpha&HFF&\\xbord10}un {\\alpha&H00&}deux{\\alpha&HFF&} trois',
+      'Dialogue: 1,0:00:02.00,0:00:03.00,Pill,,0,0,0,,{\\alpha&HFF&}{\\xbord10}un {\\alpha&H00&}deux{\\alpha&HFF&} trois',
     );
   });
 
@@ -220,6 +233,17 @@ describe('buildAss with a word highlight', () => {
     expect(lines).toEqual([
       'Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,{\\xbord10}un deux trois',
     ]);
+  });
+
+  it('anchors a shifted centred style with \\pos on every layer', () => {
+    const centred = { ...PLAIN, alignment: 'center' as const, offsetY: -120 };
+    expect(dialogues(buildAss([cue], centred))).toEqual([
+      'Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,{\\pos(540,840)}un deux trois',
+    ]);
+    const lines = dialogues(buildAss([cue], { ...centred, highlightMode: 'box' }));
+    expect(lines[2]).toContain('Pill,,0,0,0,,{\\alpha&HFF&\\xbord12\\ybord0}{\\pos(540,840)}un ');
+    expect(lines[3]).toContain('Default,,0,0,0,,{\\pos(540,840)}un deux trois');
+    expect(dialogues(buildAss([cue], { ...centred, offsetY: 0 }))[0]).toContain(',,un deux trois');
   });
 
   it('wraps, uppercases and escapes per word', () => {

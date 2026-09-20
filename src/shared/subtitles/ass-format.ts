@@ -1,3 +1,4 @@
+import { OUTPUT_HEIGHT, OUTPUT_WIDTH } from '../constants';
 import type { SubtitleStyle } from '../types';
 
 import { splitWords } from './text';
@@ -11,9 +12,33 @@ export const BOX_PADDING = { x: 10, y: 4 } as const;
 /** Alpha of the background box (ASS alpha, 00 = opaque): ~80 % opaque like the preview's `cc`. */
 export const BOX_ALPHA = 0x33;
 
-/** Override tags every event of a background-box style starts with. */
-export const boxEventPrefix = (style: SubtitleStyle): string =>
-  style.backgroundBox ? `{\\xbord${BOX_PADDING.x}}` : '';
+/**
+ * Distance from the aligned edge once the vertical offset is folded in (positive offset = down).
+ * Clamped at 0: ASS margins cannot be negative. Meaningless for the centre alignment.
+ */
+export function effectiveMarginV(style: SubtitleStyle): number {
+  if (style.alignment === 'center') {
+    return style.marginV;
+  }
+  const shift = style.alignment === 'top' ? style.offsetY : -style.offsetY;
+  return Math.max(0, style.marginV + shift);
+}
+
+/**
+ * Override tags every event starts with: the horizontal box padding, and for a shifted centred
+ * style an explicit anchor, since margins do not move alignment 5 (`\\pos` with the same anchor
+ * lands exactly where plain centring does).
+ */
+export function eventPrefix(style: SubtitleStyle): string {
+  const tags: string[] = [];
+  if (style.backgroundBox) {
+    tags.push(`\\xbord${BOX_PADDING.x}`);
+  }
+  if (style.alignment === 'center' && style.offsetY !== 0) {
+    tags.push(`\\pos(${OUTPUT_WIDTH / 2},${OUTPUT_HEIGHT / 2 + style.offsetY})`);
+  }
+  return tags.length > 0 ? `{${tags.join('')}}` : '';
+}
 
 /** `#rrggbb` → ASS `&HAABBGGRR` (alpha 00 = opaque). */
 export function hexToAssColor(hex: string, alpha = 0): string {

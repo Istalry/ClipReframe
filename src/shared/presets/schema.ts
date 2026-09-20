@@ -37,6 +37,8 @@ export const subtitleStyleSchema = z.object({
   // Added in 0.1.1; defaults keep presets saved by 0.1.0 loading without a file version bump.
   highlightMode: z.enum(SUBTITLE_HIGHLIGHT_MODES).default(DEFAULT_HIGHLIGHT_MODE),
   highlightColor: hexColor.default(DEFAULT_HIGHLIGHT_COLOR),
+  // Added in 0.1.2.
+  offsetY: z.number().int().min(-960).max(960).default(0),
 }) satisfies z.ZodType<SubtitleStyle>;
 
 export const subtitleSettingsSchema = z.object({
@@ -86,6 +88,7 @@ export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
   backgroundColor: '#000000',
   alignment: 'bottom',
   marginV: 260,
+  offsetY: 0,
   maxLineChars: 32,
   uppercase: false,
   highlightMode: DEFAULT_HIGHLIGHT_MODE,

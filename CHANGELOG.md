@@ -6,6 +6,11 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Added
+
+- Subtitle **vertical offset** (Style panel): shifts the text up or down from its position
+  (bottom / centre / top) in output pixels; saved in presets like the other style options.
+
 ### Fixed
 
 - The `Box` word highlight is exported as a real rectangle behind the word, as in the preview,

@@ -92,9 +92,10 @@ Presets live in `%APPDATA%\ClipReframe\presets.json`; copy that file to move the
 5. Edit any cue: text, start/end (seconds). Click into a cue to jump the player there; the active
    cue is highlighted while playing. The **🗑** on a row deletes it.
 6. **Style**: font (all installed fonts), size, bold/italic/caps, colour, outline or background
-   box, shadow, position (bottom / centre / top) and margin, max characters per line (auto-wrap).
-   The preview on the right shows the result live.
-7. **Current word**: emphasise the word being spoken — **Box** (default, a rounded pill behind
+   box, shadow, position (bottom / centre / top) with its margin from the edge plus a **vertical
+   offset** to nudge the text up or down from there, max characters per line (auto-wrap). The
+   preview on the right shows the result live and is saved with presets like every other option.
+7. **Current word**: emphasise the word being spoken — **Box** (default, a rectangle behind
    it), **Text colour**, **Outline colour** (not offered with a background box) or **None** —
    and pick the **highlight colour**. Word timings come from speech recognition; a cue you edit
    keeps them as long as it still has the same number of words, otherwise its duration is spread

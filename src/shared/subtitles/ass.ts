@@ -4,9 +4,10 @@ import type { SubtitleAlignment, SubtitleCue, SubtitleStyle } from '../types';
 import {
   BOX_ALPHA,
   BOX_PADDING,
-  boxEventPrefix,
   dialogueLine,
+  effectiveMarginV,
   escapeAssText,
+  eventPrefix,
   hexToAssColor,
   wrapCueText,
 } from './ass-format';
@@ -56,7 +57,7 @@ export function buildAssStyleLine(
     ALIGNMENT_CODE[style.alignment],
     40, // MarginL
     40, // MarginR
-    style.marginV,
+    effectiveMarginV(style),
     1, // Encoding
   ];
   return `Style: ${fields.join(',')}`;
@@ -94,7 +95,7 @@ export function buildAss(cues: SubtitleCue[], style: SubtitleStyle): string {
       }
       const raw = style.uppercase ? cue.text.toUpperCase() : cue.text;
       const text = wrapCueText(escapeAssText(raw), style.maxLineChars);
-      return [dialogueLine(0, cue.start, cue.end, boxEventPrefix(style) + text)];
+      return [dialogueLine(0, cue.start, cue.end, eventPrefix(style) + text)];
     });
 
   return [...header, ...events, ''].join('\n');

@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 import { wrapWords } from '@shared/subtitles/ass';
-import { BOX_PADDING } from '@shared/subtitles/ass-format';
+import { BOX_PADDING, effectiveMarginV } from '@shared/subtitles/ass-format';
 import { effectiveHighlightMode, pillPadding } from '@shared/subtitles/ass-highlight';
 import { findActiveCue, findActiveWordIndex, getCueWords } from '@shared/subtitles/cues';
 import type { SubtitleCue, SubtitleHighlightMode, SubtitleStyle } from '@shared/types';
@@ -77,13 +77,17 @@ export function SubtitleOverlay({
   // libass grows the outline outward; doubling keeps the visible thickness equal.
   const outline = 2 * style.outlineWidth * scale;
   const lineHeight = (style.fontSize + 2 * boxPadY) * scale;
-  const margin = (style.marginV - boxPadY) * scale;
+  const margin = (effectiveMarginV(style) - boxPadY) * scale;
+
+  // libass centres a block of n × font height, ignoring the box padding it then adds between
+  // the lines, so a centred multi-line box sits (n - 1) × padding lower than a true centring.
+  const centreShift = (style.offsetY + (lines.length - 1) * boxPadY) * scale;
 
   const position: CSSProperties =
     style.alignment === 'top'
       ? { top: margin }
       : style.alignment === 'center'
-        ? { top: '50%', transform: 'translateY(-50%)' }
+        ? { top: `calc(50% + ${centreShift}px)`, transform: 'translateY(-50%)' }
         : { bottom: margin };
 
   const textStyle: CSSProperties = {

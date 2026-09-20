@@ -102,10 +102,12 @@ transférer sur un autre PC.
    place le lecteur à cet instant ; le sous-titre actif est surligné pendant la lecture. Le **🗑**
    d'une ligne la supprime.
 6. **Style** : police (toutes celles installées), taille, gras/italique/majuscules, couleur, contour
-   ou boîte de fond, ombre, position (bas / centre / haut) et marge, nombre maximal de caractères
-   par ligne (retour automatique). L'aperçu de droite reflète le résultat en direct.
-7. **Mot en cours** : met en valeur le mot prononcé — **Boîte** (par défaut, une pastille arrondie
-   derrière le mot), **Couleur du texte**, **Couleur du contour** (indisponible avec une boîte de
+   ou boîte de fond, ombre, position (bas / centre / haut) avec sa marge depuis le bord plus un
+   **décalage vertical** pour ajuster finement vers le haut ou le bas, nombre maximal de
+   caractères par ligne (retour automatique). L'aperçu de droite reflète le résultat en direct
+   et tout est enregistré dans les préréglages comme les autres options.
+7. **Mot en cours** : met en valeur le mot prononcé — **Boîte** (par défaut, un rectangle derrière
+   le mot), **Couleur du texte**, **Couleur du contour** (indisponible avec une boîte de
    fond) ou **Aucun** — avec la **couleur de surlignage** de votre choix. Les temps des mots
    viennent de la reconnaissance vocale ; un sous-titre modifié les conserve tant qu'il garde le
    même nombre de mots, sinon sa durée est répartie uniformément entre les mots.
