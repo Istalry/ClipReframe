@@ -54,10 +54,33 @@ describe('wrapCueText', () => {
 });
 
 describe('buildAssStyleLine', () => {
-  it('uses BorderStyle 3 for a background box', () => {
-    const line = buildAssStyleLine({ ...DEFAULT_SUBTITLE_STYLE, backgroundBox: true });
+  it('puts the box colour in OutlineColour with fixed padding for a background box', () => {
+    const line = buildAssStyleLine({
+      ...DEFAULT_SUBTITLE_STYLE,
+      backgroundBox: true,
+      backgroundColor: '#102030',
+      outlineColor: '#ff0000',
+      outlineWidth: 12,
+    });
     const fields = line.replace('Style: ', '').split(',');
-    expect(fields[15]).toBe('3');
+    // libass fills a BorderStyle 3 box with OutlineColour (not BackColour) padded by Outline.
+    expect(fields.slice(5, 7)).toEqual(['&H33302010', '&H400000FF']);
+    expect(fields.slice(15, 17)).toEqual(['3', '4']);
+    expect(
+      buildAssStyleLine({ ...DEFAULT_SUBTITLE_STYLE, backgroundBox: true }, 'Pill', 0),
+    ).toMatch(/^Style: Pill,.*,&H00000000,&H40000000,/);
+  });
+
+  it('keeps the outline colour and width for an outlined style', () => {
+    const line = buildAssStyleLine({
+      ...DEFAULT_SUBTITLE_STYLE,
+      backgroundBox: false,
+      outlineColor: '#ff0000',
+      outlineWidth: 12,
+    });
+    const fields = line.replace('Style: ', '').split(',');
+    expect(fields[5]).toBe('&H000000FF');
+    expect(fields.slice(15, 17)).toEqual(['1', '12']);
   });
 
   it('encodes bold/italic as -1/0', () => {
@@ -119,63 +142,84 @@ describe('buildAss with a word highlight', () => {
       { start: 3, end: 3.5, text: 'trois' },
     ],
   };
+  const styles = (ass: string): string[] => ass.split('\n').filter((l) => l.startsWith('Style:'));
 
   it('emits one event per word interval covering the whole cue (colour mode)', () => {
     const lines = dialogues(
       buildAss([cue], { ...PLAIN, highlightMode: 'color', highlightColor: '#a970ff' }),
     );
     expect(lines).toEqual([
-      'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,{\\1c&H00FF70A9&}un{\\r} deux trois',
-      'Dialogue: 0,0:00:02.00,0:00:03.00,Default,,0,0,0,,un {\\1c&H00FF70A9&}deux{\\r} trois',
-      'Dialogue: 0,0:00:03.00,0:00:04.00,Default,,0,0,0,,un deux {\\1c&H00FF70A9&}trois{\\r}',
+      'Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,{\\1c&H00FF70A9&}un{\\1c&H00FFFFFF&} deux trois',
+      'Dialogue: 0,0:00:02.00,0:00:03.00,Default,,0,0,0,,un {\\1c&H00FF70A9&}deux{\\1c&H00FFFFFF&} trois',
+      'Dialogue: 0,0:00:03.00,0:00:04.00,Default,,0,0,0,,un deux {\\1c&H00FF70A9&}trois{\\1c&H00FFFFFF&}',
     ]);
   });
 
-  it('recolours the outline in outline mode', () => {
+  it('recolours the outline in outline mode and restores it explicitly', () => {
     const lines = dialogues(buildAss([cue], { ...PLAIN, highlightMode: 'outline' }));
-    expect(lines[1]).toContain('un {\\3c&H00FF70A9&}deux{\\r} trois');
+    expect(lines[1]).toContain('un {\\3c&H00FF70A9&}deux{\\3c&H00000000&} trois');
   });
 
-  it('draws a transparent pill layer under the text in box mode', () => {
-    const lines = dialogues(buildAss([cue], { ...PLAIN, highlightMode: 'box', fontSize: 64 }));
+  it('keeps the box padding on colour events of a background-box style', () => {
+    const lines = dialogues(
+      buildAss([cue], { ...PLAIN, highlightMode: 'color', backgroundBox: true }),
+    );
+    expect(lines[1]).toBe(
+      'Dialogue: 0,0:00:02.00,0:00:03.00,Default,,0,0,0,,{\\xbord10}un {\\1c&H00FF70A9&}deux{\\1c&H00FFFFFF&} trois',
+    );
+  });
+
+  it('draws an opaque pill box under the outlined text in box mode', () => {
+    const ass = buildAss([cue], { ...PLAIN, highlightMode: 'box', fontSize: 64 });
+    // The pill is a BorderStyle 3 box in the highlight colour with the same font metrics.
+    expect(styles(ass)).toEqual([
+      'Style: Default,Arial,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H40000000,-1,0,0,0,100,100,0,0,1,4,0,2,40,40,260,1',
+      'Style: Pill,Arial,64,&H00FFFFFF,&H00FFFFFF,&H00FF70A9,&H40000000,-1,0,0,0,100,100,0,0,3,4,0,2,40,40,260,1',
+    ]);
+    const lines = dialogues(ass);
     expect(lines).toHaveLength(6);
     expect(lines[2]).toBe(
-      'Dialogue: 0,0:00:02.00,0:00:03.00,Default,,0,0,0,,{\\alpha&HFF&}un {\\alpha&H00&\\1c&H00FF70A9&\\3c&H00FF70A9&\\bord14\\shad0}deux{\\alpha&HFF&} trois',
+      'Dialogue: 0,0:00:02.00,0:00:03.00,Pill,,0,0,0,,{\\alpha&HFF&\\xbord12\\ybord0}un {\\alpha&H00&}deux{\\alpha&HFF&} trois',
     );
     expect(lines[3]).toBe('Dialogue: 1,0:00:02.00,0:00:03.00,Default,,0,0,0,,un deux trois');
   });
 
-  it('layers box, pill and bare text with derived styles on a box base', () => {
+  it('draws the pill over the line box on a background-box base', () => {
     const ass = buildAss([cue], { ...PLAIN, highlightMode: 'box', backgroundBox: true });
-    const styles = ass.split('\n').filter((l) => l.startsWith('Style:'));
-    expect(styles.map((l) => l.split(',')[0])).toEqual([
-      'Style: Default',
-      'Style: Pill',
-      'Style: Text',
+    expect(
+      styles(ass).map((l) =>
+        l
+          .split(',')
+          .slice(0, 1)
+          .concat(l.split(',')[5] ?? ''),
+      ),
+    ).toEqual([
+      ['Style: Default', '&H33000000'],
+      ['Style: Pill', '&H00FF70A9'],
     ]);
-    // Pill: outline-based (BorderStyle 1); Text: no outline at all.
-    expect(styles[1]?.split(',')[15]).toBe('1');
-    expect(styles[2]?.split(',').slice(15, 18)).toEqual(['1', '0', '0']);
-
     const lines = dialogues(ass);
-    expect(lines).toHaveLength(9);
-    expect(lines[0]).toBe('Dialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,un deux trois');
-    expect(lines[1]).toContain(
-      'Dialogue: 1,0:00:01.00,0:00:02.00,Pill,,0,0,0,,{\\alpha&HFF&}{\\alpha&H00&',
+    expect(lines).toHaveLength(6);
+    expect(lines[2]).toBe(
+      'Dialogue: 0,0:00:02.00,0:00:03.00,Default,,0,0,0,,{\\xbord10}un deux trois',
     );
-    expect(lines[2]).toBe('Dialogue: 2,0:00:01.00,0:00:02.00,Text,,0,0,0,,un deux trois');
+    expect(lines[3]).toBe(
+      'Dialogue: 1,0:00:02.00,0:00:03.00,Pill,,0,0,0,,{\\alpha&HFF&\\xbord10}un {\\alpha&H00&}deux{\\alpha&HFF&} trois',
+    );
   });
 
   it('emits no extra styles for the other modes', () => {
-    const ass = buildAss([cue], { ...PLAIN, highlightMode: 'box' });
-    expect(ass.split('\n').filter((l) => l.startsWith('Style:'))).toHaveLength(1);
+    for (const highlightMode of ['none', 'color', 'outline'] as const) {
+      expect(styles(buildAss([cue], { ...PLAIN, highlightMode }))).toHaveLength(1);
+    }
   });
 
-  it('falls back to plain events for outline mode on a box style', () => {
+  it('falls back to a plain padded event for outline mode on a box style', () => {
     const lines = dialogues(
       buildAss([cue], { ...PLAIN, highlightMode: 'outline', backgroundBox: true }),
     );
-    expect(lines).toEqual(['Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,un deux trois']);
+    expect(lines).toEqual([
+      'Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,{\\xbord10}un deux trois',
+    ]);
   });
 
   it('wraps, uppercases and escapes per word', () => {
@@ -187,6 +231,6 @@ describe('buildAss with a word highlight', () => {
         maxLineChars: 10,
       }),
     );
-    expect(lines[1]).toContain(',AA {\\1c&H00FF70A9&}\\{BB\\}{\\r}\\NCC');
+    expect(lines[1]).toContain(',AA {\\1c&H00FF70A9&}\\{BB\\}{\\1c&H00FFFFFF&}\\NCC');
   });
 });

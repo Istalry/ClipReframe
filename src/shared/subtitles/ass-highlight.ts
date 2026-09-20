@@ -1,6 +1,13 @@
 import type { SubtitleCue, SubtitleHighlightMode, SubtitleStyle } from '../types';
 
-import { dialogueLine, escapeAssText, hexToAssColor, wrapWords } from './ass-format';
+import {
+  BOX_PADDING,
+  boxEventPrefix,
+  dialogueLine,
+  escapeAssText,
+  hexToAssColor,
+  wrapWords,
+} from './ass-format';
 import { getWordIntervals } from './cues';
 
 export type ActiveHighlightMode = Exclude<SubtitleHighlightMode, 'none'>;
@@ -10,32 +17,33 @@ export function effectiveHighlightMode(style: SubtitleStyle): SubtitleHighlightM
   return style.highlightMode === 'outline' && style.backgroundBox ? 'none' : style.highlightMode;
 }
 
-/** Thickness of the pill drawn behind the current word, in output pixels. */
-export const boxPadding = (fontSize: number): number => Math.round(fontSize * 0.22);
+/** Horizontal padding of the pill behind the current word, in output pixels (preview and export). */
+export const pillPadding = (fontSize: number): number => Math.round(fontSize * 0.18);
 
-/** Extra ASS styles the `box` highlight needs on top of a background-box base (see below). */
-const PILL_STYLE = 'Pill';
-const TEXT_STYLE = 'Text';
+/** Name of the extra ASS style the `box` highlight draws its pill with. */
+export const PILL_STYLE = 'Pill';
 
 /**
- * Variants of the base style, same metrics so events align: `Pill` swaps the box for an outline
- * (the pill is a thick outline) and `Text` draws bare glyphs.
+ * The pill is a BorderStyle 3 box in the highlight colour: same font metrics as the base style so
+ * the pill event lines up with the text event exactly. Returned as `[name, style, boxAlpha]`.
  */
 export function highlightStyleVariants(
   style: SubtitleStyle,
   mode: SubtitleHighlightMode,
-): [name: string, style: SubtitleStyle][] {
-  if (mode !== 'box' || !style.backgroundBox) {
+): [name: string, style: SubtitleStyle, boxAlpha: number][] {
+  if (mode !== 'box') {
     return [];
   }
   return [
-    [PILL_STYLE, { ...style, backgroundBox: false, shadow: 0 }],
-    [TEXT_STYLE, { ...style, backgroundBox: false, outlineWidth: 0, shadow: 0 }],
+    [
+      PILL_STYLE,
+      { ...style, backgroundBox: true, backgroundColor: style.highlightColor, shadow: 0 },
+      0,
+    ],
   ];
 }
 
 const INVISIBLE = '{\\alpha&HFF&}';
-const RESET = '{\\r}';
 
 interface WordTags {
   /** Placed once at the very start of the event text. */
@@ -43,8 +51,6 @@ interface WordTags {
   open: string;
   close: string;
 }
-
-const PLAIN: WordTags = { prefix: '', open: '', close: '' };
 
 /** Join wrapped words back into event text, wrapping the word at `index` in override tags. */
 function renderText(lines: readonly (readonly string[])[], index: number, tags: WordTags): string {
@@ -66,12 +72,13 @@ function renderText(lines: readonly (readonly string[])[], index: number, tags: 
  * becomes its own Dialogue showing the whole cue with inline overrides on that word. The text
  * and style are identical across events, so nothing moves when the highlight advances.
  *
- * - `color` / `outline`: recolour the word's fill / outline.
- * - `box`: a "pill" event where every other word is fully transparent (still laid out) and the
- *   current one is drawn in the highlight colour with a thick outline that merges into a rounded
- *   blob, under a copy of the text. On a background-box base the line box is drawn first, then
- *   the pill with the outline-based `Pill` style, then bare glyphs with the `Text` style —
- *   libass draws one box per line, so an inline colour override cannot recolour a segment.
+ * - `color` / `outline`: recolour the word's fill / outline. The closing tag restores the base
+ *   colour explicitly rather than with `\r`, which would also drop the box padding override.
+ * - `box`: a `Pill` event where every other word is fully transparent (still laid out) and the
+ *   current one keeps its box — libass draws BorderStyle 3 boxes per style run, so this is a
+ *   clean rectangle behind that word alone. Under an outlined base the pill goes on layer 0 and
+ *   the text on layer 1; on a background-box base the pill (with the glyph) goes on top of the
+ *   line box instead, hiding the darker box behind it.
  */
 export function buildHighlightEvents(
   cue: SubtitleCue,
@@ -85,9 +92,12 @@ export function buildHighlightEvents(
   const lines = wrapWords(words, style.maxLineChars);
   // Override tags conventionally close the colour with a trailing `&`.
   const color = `${hexToAssColor(style.highlightColor)}&`;
+  const plain: WordTags = { prefix: boxEventPrefix(style), open: '', close: '' };
   const pill: WordTags = {
-    prefix: INVISIBLE,
-    open: `{\\alpha&H00&\\1c${color}\\3c${color}\\bord${boxPadding(style.fontSize)}\\shad0}`,
+    prefix: style.backgroundBox
+      ? `{\\alpha&HFF&\\xbord${BOX_PADDING.x}}`
+      : `{\\alpha&HFF&\\xbord${pillPadding(style.fontSize)}\\ybord0}`,
+    open: '{\\alpha&H00&}',
     close: INVISIBLE,
   };
 
@@ -100,14 +110,25 @@ export function buildHighlightEvents(
 
     switch (mode) {
       case 'color':
-        return [event(0, { prefix: '', open: `{\\1c${color}}`, close: RESET })];
+        return [
+          event(0, {
+            ...plain,
+            open: `{\\1c${color}}`,
+            close: `{\\1c${hexToAssColor(style.primaryColor)}&}`,
+          }),
+        ];
       case 'outline':
-        return [event(0, { prefix: '', open: `{\\3c${color}}`, close: RESET })];
+        return [
+          event(0, {
+            ...plain,
+            open: `{\\3c${color}}`,
+            close: `{\\3c${hexToAssColor(style.outlineColor)}&}`,
+          }),
+        ];
       case 'box':
-        if (style.backgroundBox) {
-          return [event(0, PLAIN), event(1, pill, PILL_STYLE), event(2, PLAIN, TEXT_STYLE)];
-        }
-        return [event(0, pill), event(1, PLAIN)];
+        return style.backgroundBox
+          ? [event(0, plain), event(1, pill, PILL_STYLE)]
+          : [event(0, pill, PILL_STYLE), event(1, plain)];
     }
   });
 }

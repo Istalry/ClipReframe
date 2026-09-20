@@ -1,9 +1,12 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 import { wrapWords } from '@shared/subtitles/ass';
-import { effectiveHighlightMode } from '@shared/subtitles/ass-highlight';
+import { BOX_PADDING } from '@shared/subtitles/ass-format';
+import { effectiveHighlightMode, pillPadding } from '@shared/subtitles/ass-highlight';
 import { findActiveCue, findActiveWordIndex, getCueWords } from '@shared/subtitles/cues';
 import type { SubtitleCue, SubtitleHighlightMode, SubtitleStyle } from '@shared/types';
+
+import { useLibassFontScale } from '../../hooks/useLibassFontScale';
 
 interface SubtitleOverlayProps {
   cues: SubtitleCue[];
@@ -14,10 +17,15 @@ interface SubtitleOverlayProps {
 }
 
 /**
- * CSS for the word being spoken. The box uses a negative margin to cancel its padding so the
- * line keeps exactly the layout of the un-highlighted text, like the layered ASS pill does.
+ * CSS for the word being spoken, mirroring the ASS overrides. The box is a sharp rectangle like
+ * libass draws, with a negative margin cancelling its padding so the line keeps exactly the
+ * layout of the un-highlighted text.
  */
-function highlightStyle(mode: SubtitleHighlightMode, color: string): CSSProperties {
+function highlightStyle(
+  mode: SubtitleHighlightMode,
+  color: string,
+  padding: { x: number; y: number },
+): CSSProperties {
   switch (mode) {
     case 'color':
       return { color };
@@ -26,9 +34,8 @@ function highlightStyle(mode: SubtitleHighlightMode, color: string): CSSProperti
     case 'box':
       return {
         background: color,
-        borderRadius: '0.25em',
-        padding: '0 0.18em',
-        margin: '0 -0.18em',
+        padding: `${padding.y}px ${padding.x}px`,
+        margin: `0 -${padding.x}px`,
         boxDecorationBreak: 'clone',
         WebkitBoxDecorationBreak: 'clone',
       };
@@ -38,8 +45,9 @@ function highlightStyle(mode: SubtitleHighlightMode, color: string): CSSProperti
 }
 
 /**
- * DOM approximation of the burned-in ASS style. libass and CSS differ slightly (outline
- * rasterisation, line height) but position, size, colours and wrapping match closely.
+ * DOM approximation of the burned-in ASS style. Sizes follow libass conventions: the font size
+ * is ascent + descent (see `useLibassFontScale`), lines are exactly that tall and boxes pad in
+ * output pixels, so position, size, colours and wrapping match the export closely.
  */
 export function SubtitleOverlay({
   cues,
@@ -47,6 +55,7 @@ export function SubtitleOverlay({
   currentTime,
   scale,
 }: SubtitleOverlayProps): ReactNode {
+  const fontScale = useLibassFontScale(style.fontFamily, style.bold, style.italic);
   const cue = findActiveCue(cues, currentTime);
   if (!cue) {
     return null;
@@ -57,25 +66,35 @@ export function SubtitleOverlay({
   const lineOffsets = lines.map((_, i) => lines.slice(0, i).reduce((n, l) => n + l.length, 0));
   const highlight = effectiveHighlightMode(style);
   const activeIndex = highlight === 'none' ? -1 : findActiveWordIndex(cue, currentTime);
-  const activeStyle = highlightStyle(highlight, style.highlightColor);
-  const outline = style.outlineWidth * scale;
+  // libass makes each line as tall as the font size plus the box padding, and lets the outer
+  // box overflow the margin by that padding.
+  const boxPadY = style.backgroundBox ? BOX_PADDING.y : 0;
+  const activeStyle = highlightStyle(highlight, style.highlightColor, {
+    x: (style.backgroundBox ? BOX_PADDING.x : pillPadding(style.fontSize)) * scale,
+    y: boxPadY * scale,
+  });
+  // A CSS stroke is centred on the glyph edge and the fill paints over its inner half, whereas
+  // libass grows the outline outward; doubling keeps the visible thickness equal.
+  const outline = 2 * style.outlineWidth * scale;
+  const lineHeight = (style.fontSize + 2 * boxPadY) * scale;
+  const margin = (style.marginV - boxPadY) * scale;
 
   const position: CSSProperties =
     style.alignment === 'top'
-      ? { top: style.marginV * scale }
+      ? { top: margin }
       : style.alignment === 'center'
         ? { top: '50%', transform: 'translateY(-50%)' }
-        : { bottom: style.marginV * scale };
+        : { bottom: margin };
 
   const textStyle: CSSProperties = {
     fontFamily: `"${style.fontFamily}", sans-serif`,
-    fontSize: style.fontSize * scale,
+    fontSize: style.fontSize * fontScale * scale,
     fontWeight: style.bold ? 700 : 400,
     fontStyle: style.italic ? 'italic' : 'normal',
     color: style.primaryColor,
-    lineHeight: 1.2,
+    lineHeight: `${lineHeight}px`,
     ...(style.backgroundBox
-      ? { background: `${style.backgroundColor}cc`, padding: `${4 * scale}px ${10 * scale}px` }
+      ? {}
       : {
           WebkitTextStroke: outline > 0 ? `${outline}px ${style.outlineColor}` : undefined,
           paintOrder: 'stroke fill',
@@ -85,6 +104,15 @@ export function SubtitleOverlay({
               : undefined,
         }),
   };
+  // libass draws one box per line, padded around the glyph run.
+  const lineStyle: CSSProperties = style.backgroundBox
+    ? {
+        background: `${style.backgroundColor}cc`,
+        padding: `${BOX_PADDING.y * scale}px ${BOX_PADDING.x * scale}px`,
+        boxDecorationBreak: 'clone',
+        WebkitBoxDecorationBreak: 'clone',
+      }
+    : {};
 
   return (
     <div
@@ -94,14 +122,16 @@ export function SubtitleOverlay({
       <span style={textStyle}>
         {lines.map((line, i) => (
           <span key={i} className="block">
-            {line.map((word, j) => (
-              <span key={j}>
-                {j > 0 && ' '}
-                <span style={(lineOffsets[i] ?? 0) + j === activeIndex ? activeStyle : undefined}>
-                  {word}
+            <span style={lineStyle}>
+              {line.map((word, j) => (
+                <span key={j}>
+                  {j > 0 && ' '}
+                  <span style={(lineOffsets[i] ?? 0) + j === activeIndex ? activeStyle : undefined}>
+                    {word}
+                  </span>
                 </span>
-              </span>
-            ))}
+              ))}
+            </span>
           </span>
         ))}
       </span>

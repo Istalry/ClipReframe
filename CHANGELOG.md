@@ -6,6 +6,15 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Fixed
+
+- The `Box` word highlight is exported as a real rectangle behind the word, as in the preview,
+  instead of a thick outline that showed as a purple fringe around the black one.
+- Preview and export now agree on subtitle geometry: text size (libass sizes fonts by
+  ascent + descent, the preview now does too), outline thickness, line spacing, box padding and
+  the vertical margin of a background box.
+- The background box is filled with the chosen background colour; it used the outline colour.
+
 ## [0.1.1] - 2026-09-16
 
 Configurations saved by 0.1.0 load unchanged (the new word highlight defaults to the purple box).

@@ -1,4 +1,19 @@
+import type { SubtitleStyle } from '../types';
+
 import { splitWords } from './text';
+
+/**
+ * Padding of the background box around each line, in output pixels — the same values the
+ * preview uses. `y` goes in the style's Outline field; `x` needs a per-event `\\xbord` override.
+ */
+export const BOX_PADDING = { x: 10, y: 4 } as const;
+
+/** Alpha of the background box (ASS alpha, 00 = opaque): ~80 % opaque like the preview's `cc`. */
+export const BOX_ALPHA = 0x33;
+
+/** Override tags every event of a background-box style starts with. */
+export const boxEventPrefix = (style: SubtitleStyle): string =>
+  style.backgroundBox ? `{\\xbord${BOX_PADDING.x}}` : '';
 
 /** `#rrggbb` → ASS `&HAABBGGRR` (alpha 00 = opaque). */
 export function hexToAssColor(hex: string, alpha = 0): string {
