@@ -11,7 +11,8 @@ const H = 36;
 
 /** Tiny schematic of the source frame with the crop rectangles, so presets are recognisable at a glance. */
 export function PresetThumbnail({ settings }: PresetThumbnailProps): ReactNode {
-  const { layout, webcamRect, gameplayRect } = settings;
+  const { layout, webcamRect } = settings;
+  const gameplayRect = layout === 'fill' ? settings.fillRect : settings.gameplayRect;
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="shrink-0 rounded-sm bg-black">
       <rect x={0} y={0} width={W} height={H} fill="#111" />

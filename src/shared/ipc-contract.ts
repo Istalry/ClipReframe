@@ -51,6 +51,10 @@ export const subtitleCueSchema = z.object({
 });
 
 const jobId = z.string().min(1);
+const segmentSchema = z.object({
+  start: z.number().nonnegative(),
+  layout: z.enum(['split', 'fill']),
+});
 const trimRangeSchema = z
   .object({ start: z.number().nonnegative(), end: z.number().nonnegative() })
   .refine((t) => t.end > t.start, 'Trim end must be after its start');
@@ -96,6 +100,14 @@ export const invokeContract = {
     response: z.object({ path: z.string() }),
   },
   'video:cancelProxy': {
+    request: z.object({ jobId }),
+    response: z.void(),
+  },
+  'video:detectCuts': {
+    request: z.object({ jobId, path: z.string(), threshold: z.number().min(0).max(100) }),
+    response: z.object({ cuts: z.array(z.number().nonnegative()) }),
+  },
+  'video:cancelDetectCuts': {
     request: z.object({ jobId }),
     response: z.void(),
   },
@@ -174,6 +186,7 @@ export const invokeContract = {
       outputPath: z.string(),
       encoder: videoEncoder,
       trim: trimRangeSchema.nullable(),
+      segments: z.array(segmentSchema),
     }),
     response: z.object({ outputPath: z.string(), encoder: videoEncoder }),
   },
@@ -200,6 +213,10 @@ export const eventContract = {
     speed: z.string(),
   }),
   'video:proxyProgress': z.object({
+    jobId,
+    fraction: z.number().min(0).max(1),
+  }),
+  'video:cutsProgress': z.object({
     jobId,
     fraction: z.number().min(0).max(1),
   }),

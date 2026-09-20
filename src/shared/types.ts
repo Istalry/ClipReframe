@@ -1,4 +1,5 @@
 import type { SubtitleLanguage } from './constants';
+import type { Segment } from './cuts/segments';
 import type { VideoEncoder } from './export/encoders';
 
 /** Rectangle normalised to the source frame: every value is in 0..1. */
@@ -121,9 +122,11 @@ export interface Preset {
   name: string;
   layout: LayoutMode;
   splitRatio: number;
-  /** Only meaningful when `layout === 'split'`, but always stored so switching back is lossless. */
+  /** Split layout crops; always stored so switching layouts is lossless. */
   webcamRect: Rect;
   gameplayRect: Rect;
+  /** Fill layout crop (9:16 of the source). */
+  fillRect: Rect;
   subtitles: SubtitleSettings;
   outro: OutroSettings | null;
   createdAt: string;
@@ -139,7 +142,7 @@ export interface TrimRange {
 /** Everything needed to produce one export. A preset is exactly this plus identity fields. */
 export type ProjectSettings = Pick<
   Preset,
-  'layout' | 'splitRatio' | 'webcamRect' | 'gameplayRect' | 'subtitles' | 'outro'
+  'layout' | 'splitRatio' | 'webcamRect' | 'gameplayRect' | 'fillRect' | 'subtitles' | 'outro'
 >;
 
 export interface ExportRequest {
@@ -151,6 +154,8 @@ export interface ExportRequest {
   outputPath: string;
   encoder: VideoEncoder;
   trim: TrimRange | null;
+  /** Per-segment layouts; a single segment behaves like a clip without cuts. */
+  segments: Segment[];
 }
 
 export interface ExportProgress {

@@ -1,10 +1,12 @@
 import { buildAudioMixFilter } from '../audio';
 import { MAX_OUTPUT_FPS, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '../constants';
-import { getOutputRegions, toPixelRect, type OutputRegion } from '../geometry/layout';
-import type { AudioSelection, PixelRect, ProjectSettings, TrimRange, VideoInfo } from '../types';
+import type { Segment } from '../cuts/segments';
+import type { AudioSelection, ProjectSettings, TrimRange, VideoInfo } from '../types';
 
 import { encoderArgs, type VideoEncoder } from './encoders';
+import { fmt } from './format';
 import { trimmedDuration } from './trim';
+import { buildSegmentChains } from './video-chain';
 
 export interface ExportArgsInput {
   source: VideoInfo;
@@ -24,6 +26,8 @@ export interface ExportArgsInput {
   encoder?: VideoEncoder | undefined;
   /** Portion of the source to export; null = the whole clip. */
   trim?: TrimRange | null | undefined;
+  /** Per-segment layouts; empty or absent = one segment using `settings.layout`. */
+  segments?: readonly Segment[] | undefined;
 }
 
 /**
@@ -41,33 +45,16 @@ export function pickOutputFps(sourceFps: number): number {
   return Math.min(MAX_OUTPUT_FPS, sourceFps);
 }
 
-const fmt = (n: number): string => (Number.isInteger(n) ? String(n) : n.toFixed(3));
-
-const cropScale = (crop: PixelRect, region: OutputRegion): string =>
-  `crop=${crop.width}:${crop.height}:${crop.x}:${crop.y},scale=${OUTPUT_WIDTH}:${region.height}:flags=lanczos,setsar=1`;
-
 /** Video chain for the main clip, ending in `[vmain]`. */
 function buildMainVideoChain(input: ExportArgsInput, fps: number): string[] {
   const { settings, source, subtitlesFile, fontsDir } = input;
-  const regions = getOutputRegions(settings.layout, settings.splitRatio);
-  const frame = { width: source.width, height: source.height };
-  const chains: string[] = [];
-
-  if (settings.layout === 'split') {
-    const [top, bottom] = regions;
-    if (!top || !bottom) {
-      throw new Error('Split layout requires two regions');
-    }
-    chains.push(`[0:v]${cropScale(toPixelRect(settings.webcamRect, frame), top)}[top]`);
-    chains.push(`[0:v]${cropScale(toPixelRect(settings.gameplayRect, frame), bottom)}[bot]`);
-    chains.push('[top][bot]vstack=inputs=2[stacked]');
-  } else {
-    const [full] = regions;
-    if (!full) {
-      throw new Error('Fill layout requires a region');
-    }
-    chains.push(`[0:v]${cropScale(toPixelRect(settings.gameplayRect, frame), full)}[stacked]`);
-  }
+  const chains = buildSegmentChains(
+    settings,
+    { width: source.width, height: source.height },
+    input.segments ?? [],
+    input.trim ?? null,
+    source.duration,
+  );
 
   const post = [`fps=${fmt(fps)}`, 'format=yuv420p'];
   if (subtitlesFile) {

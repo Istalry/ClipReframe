@@ -7,8 +7,15 @@ import {
   SPLIT_RATIO_MIN,
   SUBTITLE_LANGUAGE_CODES,
 } from '../constants';
-import { defaultRects } from '../geometry/layout';
-import type { Preset, ProjectSettings, SubtitleHighlightMode, SubtitleStyle } from '../types';
+import { defaultRects, fitRectToAspect, gameplayAspectFor } from '../geometry/layout';
+import type {
+  LayoutMode,
+  Preset,
+  ProjectSettings,
+  Rect,
+  SubtitleHighlightMode,
+  SubtitleStyle,
+} from '../types';
 
 const unit = z.number().min(0).max(1);
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Expected #rrggbb');
@@ -53,21 +60,59 @@ export const subtitleSettingsSchema = z.object({
 
 export const outroSettingsSchema = z.object({ path: z.string().min(1) }).nullable();
 
-export const projectSettingsSchema = z.object({
+/** Frame the defaults are computed against; rects are refitted to the real source on load. */
+const HD_FRAME = { width: 1920, height: 1080 };
+
+const settingsFields = {
   layout: z.enum(['split', 'fill']),
   splitRatio: z.number().min(SPLIT_RATIO_MIN).max(SPLIT_RATIO_MAX),
   webcamRect: rectSchema,
   gameplayRect: rectSchema,
+  // Added in 0.1.2; derived from `gameplayRect` for older presets (see `withFillRect`).
+  fillRect: rectSchema.optional(),
   subtitles: subtitleSettingsSchema,
   outro: outroSettingsSchema,
-}) satisfies z.ZodType<ProjectSettings>;
+};
 
-export const presetSchema = projectSettingsSchema.extend({
-  id: z.string().min(1),
-  name: z.string().min(1).max(60),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-}) satisfies z.ZodType<Preset>;
+interface LegacyRects {
+  layout: LayoutMode;
+  splitRatio: number;
+  gameplayRect: Rect;
+  fillRect?: Rect | undefined;
+}
+
+/**
+ * Before 0.1.2 a single `gameplayRect` served both layouts and was refitted on every switch. A
+ * legacy Fill preset keeps its crop as `fillRect`; a Split one gets a 9:16 crop fitted from it.
+ */
+function withFillRect<T extends LegacyRects>(settings: T): T & { fillRect: Rect } {
+  if (settings.fillRect) {
+    return { ...settings, fillRect: settings.fillRect };
+  }
+  const { layout, splitRatio, gameplayRect } = settings;
+  return {
+    ...settings,
+    fillRect: fitRectToAspect(gameplayRect, gameplayAspectFor('fill', splitRatio, HD_FRAME)),
+    gameplayRect:
+      layout === 'fill'
+        ? fitRectToAspect(gameplayRect, gameplayAspectFor('split', splitRatio, HD_FRAME))
+        : gameplayRect,
+  };
+}
+
+export const projectSettingsSchema = z
+  .object(settingsFields)
+  .transform(withFillRect) satisfies z.ZodType<ProjectSettings>;
+
+export const presetSchema = z
+  .object({
+    ...settingsFields,
+    id: z.string().min(1),
+    name: z.string().min(1).max(60),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  .transform(withFillRect) satisfies z.ZodType<Preset>;
 
 export const PRESETS_FILE_VERSION = 1;
 
@@ -102,7 +147,7 @@ export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
 };
 
 export function createDefaultSettings(): ProjectSettings {
-  const rects = defaultRects('split', SPLIT_RATIO_DEFAULT, { width: 1920, height: 1080 });
+  const rects = defaultRects(SPLIT_RATIO_DEFAULT, HD_FRAME);
   return {
     layout: 'split',
     splitRatio: SPLIT_RATIO_DEFAULT,

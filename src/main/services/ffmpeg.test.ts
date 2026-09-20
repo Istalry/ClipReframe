@@ -38,6 +38,7 @@ const request = (overrides: Partial<ExportRequest> = {}): ExportRequest => ({
   outputPath: join(tempRoot, 'out.mp4'),
   encoder: 'libx264',
   trim: null,
+  segments: [],
   ...overrides,
 });
 

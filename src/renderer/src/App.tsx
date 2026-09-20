@@ -6,6 +6,7 @@ import { AudioTrackDialog } from './components/AudioTrackDialog/AudioTrackDialog
 import { DropZone } from './components/DropZone/DropZone';
 import { ExportBar } from './components/ExportBar/ExportBar';
 import { LayoutPanel } from './components/LayoutControls/LayoutPanel';
+import { SegmentsPanel } from './components/LayoutControls/SegmentsPanel';
 import { Transport } from './components/LayoutControls/Transport';
 import { OutroPanel } from './components/OutroPanel/OutroPanel';
 import { PresetPanel } from './components/PresetPanel/PresetPanel';
@@ -127,6 +128,7 @@ export function App(): ReactNode {
 
         <aside className="border-border bg-panel flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-l p-3">
           <LayoutPanel />
+          {source && <SegmentsPanel />}
           <SubtitlePanel />
           <OutroPanel />
         </aside>

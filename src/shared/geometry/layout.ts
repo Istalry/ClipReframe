@@ -10,6 +10,12 @@ import type { LayoutMode, PixelRect, Rect } from '../types';
 
 export type RegionKind = 'webcam' | 'gameplay';
 
+/** The settings field each editable rectangle lives in; Fill has its own gameplay crop. */
+export type RectKind = 'webcam' | 'gameplay' | 'fill';
+
+export const gameplayRectKind = (layout: LayoutMode): RectKind =>
+  layout === 'fill' ? 'fill' : 'gameplay';
+
 /** A horizontal band of the 1080×1920 output canvas. */
 export interface OutputRegion {
   kind: RegionKind;
@@ -210,17 +216,24 @@ export function toPixelRect(rect: Rect, frame: FrameSize): PixelRect {
   return { x: Math.max(0, x), y: Math.max(0, y), width, height };
 }
 
-/** Sensible starting rects for a typical stream layout (webcam bottom-left, gameplay centred). */
-export function defaultRects(
+/** The crop a layout's gameplay region needs, normalised to `frame`. */
+export const gameplayAspectFor = (
   layout: LayoutMode,
   splitRatio: number,
   frame: FrameSize,
-): { webcamRect: Rect; gameplayRect: Rect } {
+): number => toNormalizedAspect(getRegionAspect(layout, splitRatio, 'gameplay'), frame);
+
+/** Sensible starting rects for a typical stream layout (webcam bottom-left, gameplay centred). */
+export function defaultRects(
+  splitRatio: number,
+  frame: FrameSize,
+): { webcamRect: Rect; gameplayRect: Rect; fillRect: Rect } {
   const webcamAspect = toNormalizedAspect(getRegionAspect('split', splitRatio, 'webcam'), frame);
   const webcamRect = fitRectToAspect({ x: 0.02, y: 0.6, width: 0.3, height: 0.3 }, webcamAspect);
 
-  const gameplayAspect = toNormalizedAspect(getRegionAspect(layout, splitRatio, 'gameplay'), frame);
-  const gameplayRect = fitRectToAspect({ x: 0.25, y: 0, width: 0.5, height: 1 }, gameplayAspect);
+  const centred = { x: 0.25, y: 0, width: 0.5, height: 1 };
+  const gameplayRect = fitRectToAspect(centred, gameplayAspectFor('split', splitRatio, frame));
+  const fillRect = fitRectToAspect(centred, gameplayAspectFor('fill', splitRatio, frame));
 
-  return { webcamRect, gameplayRect };
+  return { webcamRect, gameplayRect, fillRect };
 }

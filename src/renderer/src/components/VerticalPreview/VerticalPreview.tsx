@@ -2,10 +2,12 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 
 import { OUTPUT_ASPECT, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '@shared/constants';
+import { activeSegment, type Segment } from '@shared/cuts/segments';
 import { getOutputRegions, toPixelRect } from '@shared/geometry/layout';
-import type { ProjectSettings, VideoInfo } from '@shared/types';
+import type { LayoutMode, ProjectSettings, Rect, VideoInfo } from '@shared/types';
 
 import { useFitAspect } from '../../hooks/useFitAspect';
+import { useActiveSegment } from '../../hooks/useSegments';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
 
@@ -15,18 +17,29 @@ interface VerticalPreviewProps {
   source: VideoInfo;
 }
 
+/** The crop each region of a layout reads from; Fill has its own gameplay rectangle. */
+function rectFor(settings: ProjectSettings, layout: LayoutMode, kind: 'webcam' | 'gameplay'): Rect {
+  if (kind === 'webcam') {
+    return settings.webcamRect;
+  }
+  return layout === 'fill' ? settings.fillRect : settings.gameplayRect;
+}
+
 /** Draw the current video frame through the crop regions into the 9:16 canvas. */
 function drawFrame(
   ctx: CanvasRenderingContext2D,
   video: HTMLVideoElement,
   settings: ProjectSettings,
   source: VideoInfo,
+  segments: readonly Segment[],
 ): void {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
   const frame = { width: source.width, height: source.height };
-  for (const region of getOutputRegions(settings.layout, settings.splitRatio)) {
-    const rect = region.kind === 'webcam' ? settings.webcamRect : settings.gameplayRect;
+  // The layout can change inside the clip, so it follows the playhead like the export does.
+  const layout = activeSegment(segments, video.currentTime).layout;
+  for (const region of getOutputRegions(layout, settings.splitRatio)) {
+    const rect = rectFor(settings, layout, region.kind);
     const crop = toPixelRect(rect, frame);
     ctx.drawImage(
       video,
@@ -51,6 +64,7 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
   const scale = fitted.height / OUTPUT_HEIGHT;
 
   const settings = useProjectStore((s) => s.settings);
+  const { segments, segment } = useActiveSegment();
   const setSplitRatio = useProjectStore((s) => s.setSplitRatio);
   const cues = useProjectStore((s) => s.cues);
   const video = usePlayerStore((s) => s.element);
@@ -59,9 +73,11 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
 
   // Keep the latest settings in a ref so the rAF loop never closes over stale state.
   const settingsRef = useRef(settings);
+  const segmentsRef = useRef(segments);
   useLayoutEffect(() => {
     settingsRef.current = settings;
-  }, [settings]);
+    segmentsRef.current = segments;
+  }, [settings, segments]);
 
   // Redraw continuously while playing; otherwise once per relevant change (seek, rect drag).
   useEffect(() => {
@@ -73,7 +89,7 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
     let raf = 0;
     const draw = (): void => {
       if (video.readyState >= 2) {
-        drawFrame(ctx, video, settingsRef.current, source);
+        drawFrame(ctx, video, settingsRef.current, source, segmentsRef.current);
       }
       if (playing) {
         raf = requestAnimationFrame(draw);
@@ -99,10 +115,10 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [video, playing, settings, source, currentTime]);
+  }, [video, playing, settings, segments, source, currentTime]);
 
-  const regions = getOutputRegions(settings.layout, settings.splitRatio);
-  const splitY = settings.layout === 'split' ? (regions[0]?.height ?? 0) / OUTPUT_HEIGHT : null;
+  const regions = getOutputRegions(segment.layout, settings.splitRatio);
+  const splitY = segment.layout === 'split' ? (regions[0]?.height ?? 0) / OUTPUT_HEIGHT : null;
 
   const onSplitterDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     const wrapper = wrapperRef.current;

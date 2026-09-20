@@ -1,5 +1,6 @@
 ﻿import { create } from 'zustand';
 
+import { CUT_THRESHOLDS, type CutSensitivity } from '@shared/cuts/detect';
 import { AppError } from '@shared/errors';
 import { VIDEO_ENCODER_LABELS, type VideoEncoder } from '@shared/export/encoders';
 import type { ExportProgress, TranscribeProgress } from '@shared/types';
@@ -7,7 +8,7 @@ import type { ExportProgress, TranscribeProgress } from '@shared/types';
 import { invoke, newJobId, subscribe } from '../api';
 
 import { useAppStore } from './app';
-import { useProjectStore } from './project';
+import { getSegments, useProjectStore } from './project';
 import { toastError, useToastStore } from './toasts';
 
 interface ExportJob {
@@ -22,21 +23,30 @@ interface TranscribeJob {
   progress: TranscribeProgress | null;
 }
 
+interface DetectJob {
+  jobId: string;
+  fraction: number;
+}
+
 export interface JobState {
   exportJob: ExportJob | null;
   lastExportPath: string | null;
   transcribeJob: TranscribeJob | null;
+  detectJob: DetectJob | null;
 
   startExport: (outputPath: string) => Promise<void>;
   cancelExport: () => Promise<void>;
   startTranscription: () => Promise<void>;
   cancelTranscription: () => Promise<void>;
+  startDetectCuts: (sensitivity: CutSensitivity) => Promise<void>;
+  cancelDetectCuts: () => Promise<void>;
 }
 
 export const useJobStore = create<JobState>((set, get) => ({
   exportJob: null,
   lastExportPath: null,
   transcribeJob: null,
+  detectJob: null,
 
   startExport: async (outputPath) => {
     const project = useProjectStore.getState();
@@ -62,6 +72,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         outputPath,
         encoder,
         trim: project.trim,
+        segments: getSegments(project),
       });
       set({ lastExportPath: outputPath });
       const toasts = useToastStore.getState();
@@ -134,6 +145,52 @@ export const useJobStore = create<JobState>((set, get) => ({
     } finally {
       unsubscribe();
       set({ transcribeJob: null });
+    }
+  },
+
+  startDetectCuts: async (sensitivity) => {
+    const project = useProjectStore.getState();
+    if (!project.source || get().detectJob) {
+      return;
+    }
+    const jobId = newJobId('cuts');
+    set({ detectJob: { jobId, fraction: 0 } });
+    const unsubscribe = subscribe('video:cutsProgress', (progress) => {
+      if (progress.jobId === jobId) {
+        set((s) => (s.detectJob ? { detectJob: { ...s.detectJob, ...progress } } : {}));
+      }
+    });
+    try {
+      const { cuts } = await invoke('video:detectCuts', {
+        jobId,
+        path: project.source.path,
+        threshold: CUT_THRESHOLDS[sensitivity],
+      });
+      useProjectStore.getState().setCutsFromDetection(cuts);
+      const found = useProjectStore.getState().cuts.length;
+      useToastStore
+        .getState()
+        .push(
+          found > 0 ? 'success' : 'info',
+          found > 0 ? `${found} cut${found > 1 ? 's' : ''} detected` : 'No cuts detected',
+          found > 0
+            ? 'Pick a layout for each segment, or remove the cuts you do not want.'
+            : 'Try a higher sensitivity, or add cuts at the playhead.',
+        );
+    } catch (err) {
+      if (!(err instanceof AppError && err.code === 'EXPORT_CANCELLED')) {
+        toastError(err, 'Cut detection failed');
+      }
+    } finally {
+      unsubscribe();
+      set({ detectJob: null });
+    }
+  },
+
+  cancelDetectCuts: async () => {
+    const job = get().detectJob;
+    if (job) {
+      await invoke('video:cancelDetectCuts', { jobId: job.jobId });
     }
   },
 

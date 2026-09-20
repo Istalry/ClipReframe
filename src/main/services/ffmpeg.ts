@@ -62,6 +62,7 @@ export async function runExport(options: ExportJobOptions): Promise<ExportResult
         outputPath: request.outputPath,
         encoder,
         trim: request.trim,
+        segments: request.segments,
       });
       let block: string[] = [];
       await run(getBinaryPath('ffmpeg'), args, {

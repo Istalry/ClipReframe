@@ -160,9 +160,13 @@ describe('toPixelRect', () => {
 
 describe('defaultRects', () => {
   it('returns aspect-correct rects inside the frame', () => {
-    const { webcamRect, gameplayRect } = defaultRects('split', 0.35, HD);
+    const { webcamRect, gameplayRect, fillRect } = defaultRects(0.35, HD);
     expectInFrame(webcamRect);
     expectInFrame(gameplayRect);
+    expectInFrame(fillRect);
+    expect(fillRect.width / fillRect.height).toBeCloseTo(
+      toNormalizedAspect(getRegionAspect('fill', 0.35, 'gameplay'), HD),
+    );
     expect(webcamRect.width / webcamRect.height).toBeCloseTo(
       toNormalizedAspect(getRegionAspect('split', 0.35, 'webcam'), HD),
     );

@@ -1,3 +1,5 @@
+import { gameplayAspectFor } from '../geometry/layout';
+
 import {
   createDefaultSettings,
   createEmptyPresetsFile,
@@ -5,6 +7,9 @@ import {
   presetSchema,
   projectSettingsSchema,
 } from './schema';
+
+/** The frame the schema's own defaults are computed against. */
+const HD = { width: 1920, height: 1080 };
 
 describe('projectSettingsSchema', () => {
   it('accepts the default settings', () => {
@@ -79,5 +84,45 @@ describe('presets file', () => {
     };
     expect(presetSchema.safeParse(preset).success).toBe(true);
     expect(presetSchema.safeParse({ ...preset, name: '' }).success).toBe(false);
+  });
+});
+
+describe('fillRect migration', () => {
+  // Before 0.1.2 the single `gameplayRect` was fitted to the aspect of the saved layout.
+  const legacy = (layout: 'split' | 'fill') => {
+    const { fillRect, ...settings } = createDefaultSettings();
+    return {
+      ...settings,
+      layout,
+      gameplayRect: layout === 'fill' ? fillRect : settings.gameplayRect,
+    };
+  };
+
+  it('keeps a legacy Fill crop as the fill rect and refits the split one', () => {
+    const parsed = projectSettingsSchema.parse(legacy('fill'));
+    expect(parsed.fillRect).toEqual(legacy('fill').gameplayRect);
+    expect(parsed.gameplayRect).not.toEqual(parsed.fillRect);
+    expect(parsed.gameplayRect.width / parsed.gameplayRect.height).toBeCloseTo(
+      gameplayAspectFor('split', parsed.splitRatio, HD),
+    );
+  });
+
+  it('derives a 9:16 fill rect from a legacy Split preset and leaves its crop alone', () => {
+    const parsed = projectSettingsSchema.parse(legacy('split'));
+    expect(parsed.gameplayRect).toEqual(legacy('split').gameplayRect);
+    expect(parsed.fillRect.width / parsed.fillRect.height).toBeCloseTo(
+      gameplayAspectFor('fill', parsed.splitRatio, HD),
+    );
+  });
+
+  it('migrates presets in a file and leaves a modern fill rect untouched', () => {
+    const { fillRect, ...settings } = createDefaultSettings();
+    const preset = { ...settings, id: 'p', name: 'old', createdAt: 'x', updatedAt: 'x' };
+    const file = migratePresetsFile({ version: 1, defaultPresetId: null, presets: [preset] });
+    const migrated = file.presets[0]?.fillRect ?? { width: 0, height: 1 };
+    expect(migrated.width / migrated.height).toBeCloseTo(
+      gameplayAspectFor('fill', settings.splitRatio, HD),
+    );
+    expect(presetSchema.parse({ ...preset, fillRect }).fillRect).toEqual(fillRect);
   });
 });

@@ -8,8 +8,8 @@ const isTyping = (target: EventTarget | null): boolean =>
   (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
 
 /**
- * Space = play/pause, ←/→ = ±1 s (Shift = ±5 s), M = mute, I / O = trim in / out at the
- * playhead. Ignored while typing in a field.
+ * Space = play/pause, ←/→ = ±1 s (Shift = ±5 s), M = mute, I / O = trim in / out and C = cut
+ * at the playhead. Ignored while typing in a field.
  */
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
@@ -45,6 +45,10 @@ export function useKeyboardShortcuts(): void {
         case 'o':
         case 'O':
           useProjectStore.getState().setTrimEnd(player.currentTime);
+          break;
+        case 'c':
+        case 'C':
+          useProjectStore.getState().addCutAt(player.currentTime);
           break;
         default:
           break;

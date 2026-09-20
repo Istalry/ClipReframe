@@ -1,13 +1,26 @@
 ﻿import { create } from 'zustand';
 
 import { defaultAudioSelection } from '@shared/audio';
+import {
+  activeSegmentIndex,
+  addCut,
+  cutsOf,
+  removeCut as removeSegmentCut,
+  segmentsFromCuts,
+  segmentsOf,
+  setSegmentLayout,
+  type Cut,
+  type Segment,
+} from '@shared/cuts/segments';
 import { clampTrim, isWholeClip } from '@shared/export/trim';
 import {
   clampSplitRatio,
   fitRectToAspect,
+  gameplayAspectFor,
   getRegionAspect,
   toNormalizedAspect,
   type FrameSize,
+  type RectKind,
   type RegionKind,
 } from '@shared/geometry/layout';
 import { createDefaultSettings } from '@shared/presets/schema';
@@ -49,13 +62,19 @@ export interface ProjectState {
   pendingAudioChoice: boolean;
   /** Portion of the clip to export; null = whole clip. Per clip, never part of a preset. */
   trim: TrimRange | null;
+  /**
+   * Layout changes inside the clip. `settings.layout` covers the clip up to the first cut, so
+   * an empty list behaves exactly like a project without cuts. Per clip, never in a preset.
+   */
+  cuts: Cut[];
 
   loadSource: (path: string) => Promise<void>;
   clearSource: () => void;
   applySettings: (settings: ProjectSettings, presetId: string | null) => Promise<void>;
-  setLayout: (layout: LayoutMode) => void;
+  /** Sets the layout of the segment under `time` (the base layout when there are no cuts). */
+  setLayout: (layout: LayoutMode, time?: number) => void;
   setSplitRatio: (ratio: number) => void;
-  setRect: (kind: RegionKind, rect: Rect) => void;
+  setRect: (kind: RectKind, rect: Rect) => void;
   selectRect: (kind: RegionKind | null) => void;
   updateSubtitles: (patch: Partial<Omit<SubtitleSettings, 'style'>>) => void;
   updateStyle: (patch: Partial<SubtitleStyle>) => void;
@@ -71,26 +90,45 @@ export interface ProjectState {
   setTrim: (trim: TrimRange | null) => void;
   setTrimStart: (time: number) => void;
   setTrimEnd: (time: number) => void;
+  /** Split the segment under the playhead; the new one inherits its layout. */
+  addCutAt: (time: number) => void;
+  removeCut: (index: number) => void;
+  setSegmentLayoutAt: (index: number, layout: LayoutMode) => void;
+  setCutsFromDetection: (times: readonly number[]) => void;
+  clearCuts: () => void;
 }
 
 const NO_AUDIO: AudioSelection = { transcribeTracks: [], exportTracks: [] };
 
+const RECT_FIELD: Record<RectKind, 'webcamRect' | 'gameplayRect' | 'fillRect'> = {
+  webcam: 'webcamRect',
+  gameplay: 'gameplayRect',
+  fill: 'fillRect',
+};
+
 const frameOf = (source: VideoInfo | null): FrameSize => source ?? DEFAULT_FRAME;
 
-/** Re-fit both rects to the aspect their output region demands. */
+/** The clip's segments. Components must memoise this — it builds a new array every call. */
+export const getSegments = (state: Pick<ProjectState, 'settings' | 'cuts'>): Segment[] =>
+  segmentsOf(state.settings.layout, state.cuts);
+
+/** Re-fit every rect to the aspect its output region demands (both layouts, always). */
 function refitRects(settings: ProjectSettings, frame: FrameSize): ProjectSettings {
   const webcamAspect = toNormalizedAspect(
     getRegionAspect('split', settings.splitRatio, 'webcam'),
     frame,
   );
-  const gameplayAspect = toNormalizedAspect(
-    getRegionAspect(settings.layout, settings.splitRatio, 'gameplay'),
-    frame,
-  );
   return {
     ...settings,
     webcamRect: fitRectToAspect(settings.webcamRect, webcamAspect),
-    gameplayRect: fitRectToAspect(settings.gameplayRect, gameplayAspect),
+    gameplayRect: fitRectToAspect(
+      settings.gameplayRect,
+      gameplayAspectFor('split', settings.splitRatio, frame),
+    ),
+    fillRect: fitRectToAspect(
+      settings.fillRect,
+      gameplayAspectFor('fill', settings.splitRatio, frame),
+    ),
   };
 }
 
@@ -131,6 +169,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     audio: NO_AUDIO,
     pendingAudioChoice: false,
     trim: null,
+    cuts: [],
 
     loadSource: async (path) => {
       set({ loadingSource: true });
@@ -144,6 +183,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           audio: defaultAudioSelection(info),
           pendingAudioChoice: info.audioTracks.length > 1,
           trim: null,
+          cuts: [],
         }));
         if (Math.abs(info.width / info.height - 16 / 9) > 0.02) {
           useToastStore
@@ -169,6 +209,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         audio: NO_AUDIO,
         pendingAudioChoice: false,
         trim: null,
+        cuts: [],
       });
     },
 
@@ -188,12 +229,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       }
     },
 
-    setLayout: (layout) => {
-      const frame = frameOf(get().source);
-      patchSettings((s) => refitRects({ ...s, layout }, frame));
-      if (layout === 'fill' && get().selectedRect === 'webcam') {
-        set({ selectedRect: 'gameplay' });
-      }
+    setLayout: (layout, time = 0) => {
+      get().setSegmentLayoutAt(activeSegmentIndex(getSegments(get()), time), layout);
     },
 
     setSplitRatio: (ratio) => {
@@ -202,9 +239,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     },
 
     setRect: (kind, rect) => {
-      patchSettings((s) =>
-        kind === 'webcam' ? { ...s, webcamRect: rect } : { ...s, gameplayRect: rect },
-      );
+      patchSettings((s) => ({ ...s, [RECT_FIELD[kind]]: rect }));
     },
 
     selectRect: (kind) => {
@@ -277,6 +312,38 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     setTrimStart: (time) => {
       const { trim, source } = get();
       get().setTrim({ start: time, end: trim?.end ?? source?.duration ?? 0 });
+    },
+
+    addCutAt: (time) => {
+      const duration = get().source?.duration ?? 0;
+      set((state) => ({
+        cuts: cutsOf(addCut(getSegments(state), time, duration)).cuts,
+      }));
+    },
+
+    removeCut: (index) => {
+      set((state) => ({ cuts: cutsOf(removeSegmentCut(getSegments(state), index)).cuts }));
+    },
+
+    setSegmentLayoutAt: (index, layout) => {
+      const frame = frameOf(get().source);
+      const segments = setSegmentLayout(getSegments(get()), index, layout);
+      const { layout: base, cuts } = cutsOf(segments);
+      set({ cuts });
+      patchSettings((s) => refitRects({ ...s, layout: base }, frame));
+      if (layout === 'fill' && get().selectedRect === 'webcam') {
+        set({ selectedRect: 'gameplay' });
+      }
+    },
+
+    setCutsFromDetection: (times) => {
+      const state = get();
+      const segments = segmentsFromCuts(times, state.settings.layout, state.source?.duration ?? 0);
+      set({ cuts: cutsOf(segments).cuts });
+    },
+
+    clearCuts: () => {
+      set({ cuts: [] });
     },
 
     setTrimEnd: (time) => {

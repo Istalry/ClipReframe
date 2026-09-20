@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 
-import { getRegionAspect, toNormalizedAspect } from '@shared/geometry/layout';
+import {
+  gameplayAspectFor,
+  gameplayRectKind,
+  getRegionAspect,
+  toNormalizedAspect,
+} from '@shared/geometry/layout';
 import { toMediaUrl } from '@shared/media-url';
 import type { VideoInfo } from '@shared/types';
 
 import { useFitAspect } from '../../hooks/useFitAspect';
 import { useMixSync } from '../../hooks/useMixSync';
+import { useActiveSegment } from '../../hooks/useSegments';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
 import { selectProxyPath, useProxyStore } from '../../store/proxy';
@@ -57,10 +63,11 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
     getRegionAspect('split', settings.splitRatio, 'webcam'),
     frame,
   );
-  const gameplayAspect = toNormalizedAspect(
-    getRegionAspect(settings.layout, settings.splitRatio, 'gameplay'),
-    frame,
-  );
+  // Framing follows the segment under the playhead, like the preview and the export.
+  const layout = useActiveSegment().segment.layout;
+  const gameplayAspect = gameplayAspectFor(layout, settings.splitRatio, frame);
+  const gameplayKind = gameplayRectKind(layout);
+  const gameplayRect = layout === 'fill' ? settings.fillRect : settings.gameplayRect;
 
   return (
     <div ref={containerRef} className="flex h-full w-full items-center justify-center">
@@ -114,7 +121,7 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
         />
         {mixPath && <audio ref={mixRef} src={toMediaUrl(mixPath)} muted={muted} preload="auto" />}
         <div className="absolute inset-0">
-          {settings.layout === 'split' && (
+          {layout === 'split' && (
             <TransformRect
               kind="webcam"
               rect={settings.webcamRect}
@@ -131,12 +138,12 @@ export function SourceStage({ source }: SourceStageProps): ReactNode {
           )}
           <TransformRect
             kind="gameplay"
-            rect={settings.gameplayRect}
+            rect={gameplayRect}
             normalizedAspect={gameplayAspect}
             selected={selectedRect === 'gameplay'}
             getStageSize={getStageSize}
             onChange={(r) => {
-              setRect('gameplay', r);
+              setRect(gameplayKind, r);
             }}
             onSelect={() => {
               selectRect('gameplay');

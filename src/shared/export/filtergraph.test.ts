@@ -205,3 +205,76 @@ describe('parseProgressBlock', () => {
     expect(parseProgressBlock('out_time_us=-9223372036854775808')?.outTime).toBe(0);
   });
 });
+
+describe('segments', () => {
+  /** Only the chains producing `[stacked]`, i.e. the clip's own video. */
+  const chains = (input: ExportArgsInput): string[] => {
+    const all = buildFilterComplex(input).split(';');
+    return all.slice(
+      0,
+      all.findIndex((c) => c.startsWith('[stacked]')),
+    );
+  };
+
+  it('renders a single segment exactly like a clip without cuts', () => {
+    const plain = chains(base());
+    expect(chains({ ...base(), segments: [] })).toEqual(plain);
+    expect(chains({ ...base(), segments: [{ start: 0, layout: 'split' }] })).toEqual(plain);
+    expect(chains({ ...base(), segments: [{ start: 0, layout: 'fill' }] })).toEqual(
+      chains({ ...base(), settings: { ...createDefaultSettings(), layout: 'fill' } }),
+    );
+  });
+
+  it('trims each segment, gives it its own layout and concatenates them', () => {
+    const settings = createDefaultSettings();
+    const graph = chains({
+      ...base(),
+      segments: [
+        { start: 0, layout: 'split' },
+        { start: 10, layout: 'fill' },
+      ],
+    });
+    // Two crops for the split part, one for the fill part, then the concat.
+    expect(graph).toHaveLength(5);
+    expect(graph[0]).toContain('[0:v]trim=start=0:end=10,setpts=PTS-STARTPTS,crop=');
+    expect(graph[0]).toMatch(/\[top0\]$/);
+    expect(graph[2]).toBe('[top0][bot0]vstack=inputs=2[v0]');
+    expect(graph[3]).toContain('[0:v]trim=start=10,setpts=PTS-STARTPTS,crop=');
+    expect(graph[3]).toMatch(/scale=1080:1920:flags=lanczos,setsar=1\[v1\]$/);
+    expect(graph[4]).toBe('[v0][v1]concat=n=2:v=1:a=0[stacked]');
+    // The fill segment crops `fillRect`, the split one `gameplayRect`.
+    expect(graph[3]).not.toContain(`crop=${settings.gameplayRect.width}`);
+  });
+
+  it('clips segments to the trim and shifts them to the output timeline', () => {
+    const graph = chains({
+      ...base(),
+      trim: { start: 5, end: 30 },
+      segments: [
+        { start: 0, layout: 'split' },
+        { start: 10, layout: 'fill' },
+        { start: 40, layout: 'split' },
+      ],
+    });
+    expect(graph[0]).toContain('trim=start=0:end=5,setpts=PTS-STARTPTS');
+    expect(graph[3]).toContain('trim=start=5,setpts=PTS-STARTPTS');
+    expect(graph[4]).toBe('[v0][v1]concat=n=2:v=1:a=0[stacked]');
+  });
+
+  it('keeps three segments in order', () => {
+    const graph = chains({
+      ...base(),
+      segments: [
+        { start: 0, layout: 'fill' },
+        { start: 10, layout: 'fill' },
+        { start: 20, layout: 'fill' },
+      ],
+    });
+    expect(graph).toEqual([
+      expect.stringContaining('trim=start=0:end=10'),
+      expect.stringContaining('trim=start=10:end=20'),
+      expect.stringContaining('trim=start=20,'),
+      '[v0][v1][v2]concat=n=3:v=1:a=0[stacked]',
+    ]);
+  });
+});

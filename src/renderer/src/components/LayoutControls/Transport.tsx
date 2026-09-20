@@ -20,6 +20,7 @@ export function Transport(): ReactNode {
   const mixPath = usePlayerStore((s) => s.mixPath);
   const mixPending = usePlayerStore((s) => s.mixPending);
   const trim = useProjectStore((s) => s.trim);
+  const cuts = useProjectStore((s) => s.cuts);
   const pct = (t: number): string => `${duration > 0 ? (t / duration) * 100 : 0}%`;
 
   return (
@@ -68,6 +69,14 @@ export function Transport(): ReactNode {
           }}
           className="w-full"
         />
+        {cuts.map((cut) => (
+          // Where the layout changes; the segment list is in the Segments panel.
+          <div
+            key={cut.time}
+            className="bg-accent pointer-events-none absolute inset-y-0 w-px"
+            style={{ left: pct(cut.time) }}
+          />
+        ))}
         {trim && (
           // Shade what the trim leaves out; the bar itself stays fully usable.
           <>

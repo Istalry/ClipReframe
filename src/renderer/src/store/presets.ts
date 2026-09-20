@@ -44,10 +44,13 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     if (!preset) {
       return;
     }
-    const { layout, splitRatio, webcamRect, gameplayRect, subtitles, outro } = preset;
+    const { layout, splitRatio, webcamRect, gameplayRect, fillRect, subtitles, outro } = preset;
     await useProjectStore
       .getState()
-      .applySettings({ layout, splitRatio, webcamRect, gameplayRect, subtitles, outro }, id);
+      .applySettings(
+        { layout, splitRatio, webcamRect, gameplayRect, fillRect, subtitles, outro },
+        id,
+      );
   },
 
   saveAs: async (name, settings) => {
