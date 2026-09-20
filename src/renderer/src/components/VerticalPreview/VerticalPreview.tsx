@@ -3,11 +3,15 @@ import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 
 import { OUTPUT_ASPECT, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '@shared/constants';
 import { activeSegment, type Segment } from '@shared/cuts/segments';
+import { containRect, overlayWindow } from '@shared/export/outro';
 import { getOutputRegions, toPixelRect } from '@shared/geometry/layout';
+import { toMediaUrl } from '@shared/media-url';
 import type { LayoutMode, ProjectSettings, Rect, VideoInfo } from '@shared/types';
 
 import { useFitAspect } from '../../hooks/useFitAspect';
+import { useOverlaySync } from '../../hooks/useOverlaySync';
 import { useActiveSegment } from '../../hooks/useSegments';
+import { useOutroPreviewStore, selectOutroPreviewPath } from '../../store/outroPreview';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
 
@@ -32,6 +36,7 @@ function drawFrame(
   settings: ProjectSettings,
   source: VideoInfo,
   segments: readonly Segment[],
+  overlay: { video: HTMLVideoElement; start: number } | null,
 ): void {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
@@ -53,6 +58,14 @@ function drawFrame(
       region.height,
     );
   }
+  // The outro is composited on top, letterboxed exactly like ffmpeg's decrease + pad does.
+  if (overlay && video.currentTime >= overlay.start && overlay.video.readyState >= 2) {
+    const box = containRect({
+      width: overlay.video.videoWidth,
+      height: overlay.video.videoHeight,
+    });
+    ctx.drawImage(overlay.video, box.x, box.y, box.width, box.height);
+  }
 }
 
 export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
@@ -68,6 +81,17 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
   const setSplitRatio = useProjectStore((s) => s.setSplitRatio);
   const cues = useProjectStore((s) => s.cues);
   const video = usePlayerStore((s) => s.element);
+  const overlayRef = useRef<HTMLVideoElement>(null);
+  const outro = useProjectStore((s) => s.settings.outro);
+  const outroInfo = useProjectStore((s) => s.outroInfo);
+  const trim = useProjectStore((s) => s.trim);
+  const outroPreviewPath = useOutroPreviewStore(selectOutroPreviewPath(outro?.path));
+  const overlayActive =
+    outro?.mode === 'overlay' && outroPreviewPath !== null && outroInfo !== null;
+  const overlayStartTime = overlayActive
+    ? overlayWindow(source.duration, outroInfo.duration, trim).start
+    : 0;
+  useOverlaySync({ current: video }, overlayRef, overlayStartTime, overlayActive && video !== null);
   const playing = usePlayerStore((s) => s.playing);
   const currentTime = usePlayerStore((s) => s.currentTime);
 
@@ -89,7 +113,16 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
     let raf = 0;
     const draw = (): void => {
       if (video.readyState >= 2) {
-        drawFrame(ctx, video, settingsRef.current, source, segmentsRef.current);
+        drawFrame(
+          ctx,
+          video,
+          settingsRef.current,
+          source,
+          segmentsRef.current,
+          overlayRef.current && overlayActive
+            ? { video: overlayRef.current, start: overlayStartTime }
+            : null,
+        );
       }
       if (playing) {
         raf = requestAnimationFrame(draw);
@@ -102,20 +135,26 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
       const onSeeked = (): void => {
         draw();
       };
+      const overlayVideo = overlayRef.current;
       video.addEventListener('seeked', onSeeked);
       video.addEventListener('loadeddata', onSeeked);
       video.addEventListener('canplay', onSeeked);
+      // The outro seeks on its own clock, so its frames need a redraw too.
+      overlayVideo?.addEventListener('seeked', onSeeked);
+      overlayVideo?.addEventListener('loadeddata', onSeeked);
       draw();
       return () => {
         video.removeEventListener('seeked', onSeeked);
         video.removeEventListener('loadeddata', onSeeked);
         video.removeEventListener('canplay', onSeeked);
+        overlayVideo?.removeEventListener('seeked', onSeeked);
+        overlayVideo?.removeEventListener('loadeddata', onSeeked);
       };
     }
     return () => {
       cancelAnimationFrame(raf);
     };
-  }, [video, playing, settings, segments, source, currentTime]);
+  }, [video, playing, settings, segments, source, currentTime, overlayActive, overlayStartTime]);
 
   const regions = getOutputRegions(segment.layout, settings.splitRatio);
   const splitY = segment.layout === 'split' ? (regions[0]?.height ?? 0) / OUTPUT_HEIGHT : null;
@@ -146,6 +185,16 @@ export function VerticalPreview({ source }: VerticalPreviewProps): ReactNode {
         className="relative overflow-hidden rounded-md bg-black shadow-lg"
         style={{ width: fitted.width, height: fitted.height }}
       >
+        {outroPreviewPath && (
+          // Hidden: its frames are composited into the canvas, never shown directly.
+          <video
+            ref={overlayRef}
+            src={toMediaUrl(outroPreviewPath)}
+            muted
+            preload="auto"
+            className="pointer-events-none absolute h-px w-px opacity-0"
+          />
+        )}
         <canvas
           ref={canvasRef}
           width={OUTPUT_WIDTH}

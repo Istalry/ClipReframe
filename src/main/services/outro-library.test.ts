@@ -64,6 +64,31 @@ describe('OutroLibrary', () => {
     expect(await readdir(join(root, 'outros'))).toEqual([storedA.split(/[\\/]/).pop()]);
   });
 
+  it('names the preview copy after the library file, and only for managed paths', async () => {
+    const source = join(root, 'a.mp4');
+    await writeFile(source, 'aaa');
+    const stored = await library.import(source);
+    expect(library.previewPath(stored)).toBe(`${stored}.preview.webm`);
+    expect(library.previewPath(source)).toBeNull();
+  });
+
+  it('keeps the preview of a referenced copy and removes orphan previews', async () => {
+    const a = join(root, 'a.mp4');
+    const b = join(root, 'b.mp4');
+    await writeFile(a, 'aaa');
+    await writeFile(b, 'bbb');
+    const storedA = await library.import(a);
+    const storedB = await library.import(b);
+    await writeFile(`${storedA}.preview.webm`, 'webm');
+    await writeFile(`${storedB}.preview.webm`, 'webm');
+    await writeFile(`${storedA}.preview.webm.partial`, 'half');
+
+    await library.prune([storedA]);
+    expect((await readdir(join(root, 'outros'))).sort()).toEqual(
+      [storedA, `${storedA}.preview.webm`].map((p) => p.split(/[\\/]/).pop()).sort(),
+    );
+  });
+
   it('prune is a no-op before anything was imported', async () => {
     await expect(library.prune([])).resolves.toBeUndefined();
   });

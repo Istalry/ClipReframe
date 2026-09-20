@@ -138,6 +138,15 @@ export const invokeContract = {
     response: z.object({ path: z.string() }),
   },
 
+  'outro:preparePreview': {
+    request: z.object({ jobId, path: z.string() }),
+    response: z.object({ path: z.string().nullable() }),
+  },
+  'outro:cancelPreview': {
+    request: z.object({ jobId }),
+    response: z.void(),
+  },
+
   'fonts:list': {
     request: z.void(),
     response: z.array(z.string()),
@@ -217,6 +226,10 @@ export const eventContract = {
     fraction: z.number().min(0).max(1),
   }),
   'video:cutsProgress': z.object({
+    jobId,
+    fraction: z.number().min(0).max(1),
+  }),
+  'outro:previewProgress': z.object({
     jobId,
     fraction: z.number().min(0).max(1),
   }),

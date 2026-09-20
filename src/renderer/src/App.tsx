@@ -16,6 +16,7 @@ import { Toasts } from './components/Toasts/Toasts';
 import { Button } from './components/ui/Button';
 import { VerticalPreview } from './components/VerticalPreview/VerticalPreview';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useOutroPreview } from './hooks/useOutroPreview';
 import { usePreviewMix } from './hooks/usePreviewMix';
 import { useProxy } from './hooks/useProxy';
 import { useWindowFileDrop } from './hooks/useWindowFileDrop';
@@ -48,6 +49,7 @@ export function App(): ReactNode {
   useKeyboardShortcuts();
   usePreviewMix();
   useProxy();
+  useOutroPreview();
   const proxyJob = useProxyStore((s) => s.jobId !== null);
   const proxyFraction = useProxyStore((s) => s.fraction);
   const proxyReady = useProxyStore((s) => s.path !== null);

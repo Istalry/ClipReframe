@@ -24,6 +24,9 @@ async function hashFile(path: string): Promise<string> {
  * or deleted. Files are named `<content-hash>-<original name>`: importing the same video twice
  * reuses the copy, and a renamed original still de-duplicates by content.
  */
+/** Preview copies sit next to their video: `<copy>.preview.webm`. */
+const PREVIEW_SUFFIX = '.preview.webm';
+
 export class OutroLibrary {
   constructor(private readonly dir: string) {}
 
@@ -36,6 +39,14 @@ export class OutroLibrary {
     return resolve(path)
       .toLowerCase()
       .startsWith(resolve(this.dir).toLowerCase() + '\\');
+  }
+
+  /**
+   * Where the alpha-capable preview copy of a library video lives; `null` for anything outside
+   * the library, which the renderer reports as "pick the outro again".
+   */
+  previewPath(path: string): string | null {
+    return this.isManaged(path) ? `${path}${PREVIEW_SUFFIX}` : null;
   }
 
   /** Copy `sourcePath` into the library (or reuse an identical copy) and return the stored path. */
@@ -81,6 +92,7 @@ export class OutroLibrary {
     const keep = new Set(
       referenced
         .filter((p): p is string => typeof p === 'string')
+        .flatMap((p) => [p, `${p}${PREVIEW_SUFFIX}`])
         .map((p) => resolve(p).toLowerCase()),
     );
     for (const entry of entries) {

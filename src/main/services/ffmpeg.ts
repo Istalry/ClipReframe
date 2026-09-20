@@ -50,7 +50,15 @@ export async function runExport(options: ExportJobOptions): Promise<ExportResult
       await writeFile(join(temp.path, SUBTITLES_FILE), ass, 'utf8');
     }
 
-    const total = Math.max(0.01, totalOutputDuration(request.source, request.outro, request.trim));
+    const total = Math.max(
+      0.01,
+      totalOutputDuration(
+        request.source,
+        request.outro,
+        request.trim,
+        request.settings.outro?.mode ?? 'after',
+      ),
+    );
     const encode = async (encoder: VideoEncoder): Promise<void> => {
       const args = buildExportArgs({
         source: request.source,

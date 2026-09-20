@@ -27,6 +27,7 @@ import { createDefaultSettings } from '@shared/presets/schema';
 import type {
   AudioSelection,
   LayoutMode,
+  OutroPlacement,
   ProjectSettings,
   Rect,
   SubtitleCue,
@@ -82,6 +83,7 @@ export interface ProjectState {
   updateCue: (id: string, patch: Partial<Omit<SubtitleCue, 'id'>>) => void;
   deleteCue: (id: string) => void;
   setOutro: (path: string | null) => Promise<void>;
+  setOutroMode: (mode: OutroPlacement) => void;
   markSaved: (presetId: string) => void;
   setAudioSelection: (audio: AudioSelection) => void;
   openAudioChoice: () => void;
@@ -283,8 +285,15 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         }
       }
       const { info, missing } = await probeOutro(stored);
-      patchSettings((s) => ({ ...s, outro: stored && info ? { path: stored } : null }));
+      patchSettings((s) => ({
+        ...s,
+        outro: stored && info ? { path: stored, mode: s.outro?.mode ?? 'after' } : null,
+      }));
       set({ outroInfo: info, outroMissing: missing, outroImporting: false });
+    },
+
+    setOutroMode: (mode) => {
+      patchSettings((s) => (s.outro ? { ...s, outro: { ...s.outro, mode } } : s));
     },
 
     markSaved: (presetId) => {

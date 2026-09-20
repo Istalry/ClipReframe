@@ -278,3 +278,61 @@ describe('segments', () => {
     ]);
   });
 });
+
+describe('outro placement', () => {
+  const overlaySettings = (mode: 'after' | 'overlay') => ({
+    ...createDefaultSettings(),
+    outro: { path: outro.path, mode },
+  });
+  const withOutro = (mode: 'after' | 'overlay', over: Partial<ExportArgsInput> = {}) =>
+    buildFilterComplex({ ...base(), outro, settings: overlaySettings(mode), ...over });
+
+  it('appends the outro by default, exactly as before', () => {
+    expect(withOutro('after')).toBe(buildFilterComplex({ ...base(), outro }));
+  });
+
+  it('composites a silent outro over the end of the clip without touching the audio', () => {
+    const graph = withOutro('overlay');
+    expect(graph).toContain('[stacked]fps=60,format=yuv420p[base]');
+    expect(graph).toContain('format=yuva420p,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black@0');
+    expect(graph).toContain('setpts=PTS-STARTPTS+39/TB[vout]');
+    expect(graph).toContain('[base][vout]overlay=eof_action=pass[ov]');
+    expect(graph).toContain('[ov]null[vmain]');
+    expect(graph).toContain('[amain]anull[a]');
+    expect(graph).not.toContain('concat=n=2');
+    expect(graph).not.toContain('[aout]');
+  });
+
+  it('starts the overlay at the trim start when the outro is longer than the clip', () => {
+    expect(withOutro('overlay', { trim: { start: 10, end: 12 } })).toContain(
+      'setpts=PTS-STARTPTS+0/TB[vout]',
+    );
+    expect(withOutro('overlay', { trim: { start: 3.5, end: 10 } })).toContain(
+      'setpts=PTS-STARTPTS+3.500/TB[vout]',
+    );
+  });
+
+  it('draws the subtitles over the outro', () => {
+    const graph = withOutro('overlay', { subtitlesFile: 'subs.ass' });
+    expect(graph).toContain("[ov]subtitles=subs.ass:fontsdir='C\\:/Windows/Fonts'[vmain]");
+  });
+
+  it('mixes the outro audio in at its start time', () => {
+    const graph = buildFilterComplex({
+      ...base(),
+      outro: {
+        ...outro,
+        audioTracks: [{ index: 0, codec: 'aac', channels: 2, sampleRate: 48000, label: null }],
+      },
+      settings: overlaySettings('overlay'),
+    });
+    expect(graph).toContain('[aout]adelay=delays=39000:all=1[aoutd]');
+    expect(graph).toContain('[amain][aoutd]amix=inputs=2:duration=first:normalize=0');
+  });
+
+  it('does not extend the progress denominator for an overlay outro', () => {
+    expect(totalOutputDuration(source, outro, null, 'after')).toBe(45);
+    expect(totalOutputDuration(source, outro, null, 'overlay')).toBe(42);
+    expect(totalOutputDuration(source, outro, { start: 10, end: 20 }, 'overlay')).toBe(10);
+  });
+});

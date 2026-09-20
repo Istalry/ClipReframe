@@ -3,22 +3,34 @@ import { useState } from 'react';
 import type { DragEvent, ReactNode } from 'react';
 
 import { OUTPUT_ASPECT } from '@shared/constants';
+import { OUTRO_PLACEMENTS } from '@shared/presets/schema';
+import type { OutroPlacement } from '@shared/types';
 
 import { getPathForFile, invoke } from '../../api';
 import { isSupportedVideoName, OWN_DROP_TARGET_ATTR } from '../../hooks/useWindowFileDrop';
 import { formatTime, outroDisplayName } from '../../lib/format';
+import { useOutroPreviewStore } from '../../store/outroPreview';
 import { useProjectStore } from '../../store/project';
 import { toastError } from '../../store/toasts';
 import { Button } from '../ui/Button';
-import { SectionTitle } from '../ui/Field';
+import { Field, SectionTitle, Select } from '../ui/Field';
 
-/** Pick / clear the call-to-action video appended after the clip. */
+const PLACEMENT_LABELS: Record<OutroPlacement, string> = {
+  after: 'After the clip',
+  overlay: 'On top of the clip',
+};
+
+/** Pick / clear the call-to-action video, and choose how it is placed. */
 export function OutroPanel(): ReactNode {
   const outro = useProjectStore((s) => s.settings.outro);
   const info = useProjectStore((s) => s.outroInfo);
   const missing = useProjectStore((s) => s.outroMissing);
   const importing = useProjectStore((s) => s.outroImporting);
   const setOutro = useProjectStore((s) => s.setOutro);
+  const setOutroMode = useProjectStore((s) => s.setOutroMode);
+  const previewJob = useOutroPreviewStore((s) => s.jobId);
+  const previewFraction = useOutroPreviewStore((s) => s.fraction);
+  const previewUnavailable = useOutroPreviewStore((s) => s.unavailable);
   const [over, setOver] = useState(false);
 
   // Own the drop here so the window-level handler does not treat it as a new source clip.
@@ -100,8 +112,32 @@ export function OutroPanel(): ReactNode {
         </div>
       ) : (
         <p className="text-muted text-xs">
-          Append a vertical video at the end of every export. Drop a file here or choose one.
+          Add a vertical video to every export, after the clip or over its end. Drop a file here or
+          choose one.
         </p>
+      )}
+      {outro && (
+        <>
+          <Field label="Placement">
+            <Select
+              value={outro.mode}
+              options={OUTRO_PLACEMENTS.map((mode) => ({
+                value: mode,
+                label: PLACEMENT_LABELS[mode],
+              }))}
+              onChange={setOutroMode}
+            />
+          </Field>
+          <p className="text-muted text-xs">
+            {outro.mode === 'after'
+              ? 'Appended at the end of the export; not shown in the preview.'
+              : previewJob
+                ? `Preparing the preview… ${Math.round(previewFraction * 100)}%`
+                : previewUnavailable
+                  ? 'Preview unavailable for this file — pick the outro again.'
+                  : `Composited over the last ${info ? formatTime(info.duration) : ''} of the clip; use a video with a transparent background.`}
+          </p>
+        </>
       )}
       <Button
         disabled={importing}

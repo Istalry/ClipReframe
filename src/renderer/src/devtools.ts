@@ -1,5 +1,6 @@
 import { useAppStore } from './store/app';
 import { useJobStore } from './store/jobs';
+import { useOutroPreviewStore } from './store/outroPreview';
 import { usePlayerStore } from './store/player';
 import { usePresetStore } from './store/presets';
 import { useProjectStore } from './store/project';
@@ -13,6 +14,7 @@ const stores = {
   jobs: useJobStore,
   player: usePlayerStore,
   proxy: useProxyStore,
+  outroPreview: useOutroPreviewStore,
   toasts: useToastStore,
 };
 

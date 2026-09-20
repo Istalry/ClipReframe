@@ -58,7 +58,15 @@ export const subtitleSettingsSchema = z.object({
   style: subtitleStyleSchema,
 });
 
-export const outroSettingsSchema = z.object({ path: z.string().min(1) }).nullable();
+export const OUTRO_PLACEMENTS = ['after', 'overlay'] as const;
+
+export const outroSettingsSchema = z
+  .object({
+    path: z.string().min(1),
+    // Added in 0.1.2; presets saved before it keep the appended outro they were made with.
+    mode: z.enum(OUTRO_PLACEMENTS).default('after'),
+  })
+  .nullable();
 
 /** Frame the defaults are computed against; rects are refitted to the real source on load. */
 const HD_FRAME = { width: 1920, height: 1080 };

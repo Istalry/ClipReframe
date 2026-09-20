@@ -1,6 +1,8 @@
 import { AudioLines, Loader2, Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { overlayWindow } from '@shared/export/outro';
+
 import { formatTime } from '../../lib/format';
 import { usePlayerStore } from '../../store/player';
 import { useProjectStore } from '../../store/project';
@@ -21,6 +23,12 @@ export function Transport(): ReactNode {
   const mixPending = usePlayerStore((s) => s.mixPending);
   const trim = useProjectStore((s) => s.trim);
   const cuts = useProjectStore((s) => s.cuts);
+  const outro = useProjectStore((s) => s.settings.outro);
+  const outroInfo = useProjectStore((s) => s.outroInfo);
+  const overlay =
+    outro?.mode === 'overlay' && outroInfo
+      ? overlayWindow(duration, outroInfo.duration, trim)
+      : null;
   const pct = (t: number): string => `${duration > 0 ? (t / duration) * 100 : 0}%`;
 
   return (
@@ -69,6 +77,14 @@ export function Transport(): ReactNode {
           }}
           className="w-full"
         />
+        {overlay && (
+          // Where the outro is composited over the clip.
+          <div
+            className="bg-accent/25 pointer-events-none absolute inset-y-0"
+            title="Outro on top of the clip"
+            style={{ left: pct(overlay.start), width: pct(overlay.end - overlay.start) }}
+          />
+        )}
         {cuts.map((cut) => (
           // Where the layout changes; the segment list is in the Segments panel.
           <div

@@ -113,8 +113,12 @@ export interface SubtitleSettings {
   style: SubtitleStyle;
 }
 
+/** `after` appends the outro, `overlay` composites it over the end of the clip. */
+export type OutroPlacement = 'after' | 'overlay';
+
 export interface OutroSettings {
   path: string;
+  mode: OutroPlacement;
 }
 
 export interface Preset {

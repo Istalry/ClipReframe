@@ -1,10 +1,17 @@
 import { buildAudioMixFilter } from '../audio';
-import { MAX_OUTPUT_FPS, OUTPUT_HEIGHT, OUTPUT_WIDTH } from '../constants';
+import { MAX_OUTPUT_FPS } from '../constants';
 import type { Segment } from '../cuts/segments';
-import type { AudioSelection, ProjectSettings, TrimRange, VideoInfo } from '../types';
+import type {
+  AudioSelection,
+  OutroPlacement,
+  ProjectSettings,
+  TrimRange,
+  VideoInfo,
+} from '../types';
 
 import { encoderArgs, type VideoEncoder } from './encoders';
 import { fmt } from './format';
+import { appendedOutroChains, outroPlacement, overlayOutroChains } from './outro-chains';
 import { trimmedDuration } from './trim';
 import { buildSegmentChains } from './video-chain';
 
@@ -45,8 +52,11 @@ export function pickOutputFps(sourceFps: number): number {
   return Math.min(MAX_OUTPUT_FPS, sourceFps);
 }
 
-/** Video chain for the main clip, ending in `[vmain]`. */
-function buildMainVideoChain(input: ExportArgsInput, fps: number): string[] {
+/**
+ * Video chain for the main clip, ending in `[vmain]`. With an overlay outro the subtitles are
+ * drawn last, over the outro, which is what the preview shows.
+ */
+function buildMainVideoChain(input: ExportArgsInput, fps: number, overlay: string[]): string[] {
   const { settings, source, subtitlesFile, fontsDir } = input;
   const chains = buildSegmentChains(
     settings,
@@ -55,11 +65,16 @@ function buildMainVideoChain(input: ExportArgsInput, fps: number): string[] {
     input.trim ?? null,
     source.duration,
   );
+  const subtitles = subtitlesFile
+    ? `subtitles=${subtitlesFile}:fontsdir='${escapeFilterPath(fontsDir)}'`
+    : null;
 
-  const post = [`fps=${fmt(fps)}`, 'format=yuv420p'];
-  if (subtitlesFile) {
-    post.push(`subtitles=${subtitlesFile}:fontsdir='${escapeFilterPath(fontsDir)}'`);
+  if (overlay.length > 0) {
+    chains.push(`[stacked]fps=${fmt(fps)},format=yuv420p[base]`, ...overlay);
+    chains.push(`[ov]${subtitles ?? 'null'}[vmain]`);
+    return chains;
   }
+  const post = [`fps=${fmt(fps)}`, 'format=yuv420p', ...(subtitles ? [subtitles] : [])];
   chains.push(`[stacked]${post.join(',')}[vmain]`);
   return chains;
 }
@@ -80,28 +95,39 @@ const audioChain = (
     silenceDuration: duration,
   });
 
-function buildOutroChains(outro: VideoInfo, fps: number): string[] {
-  const allTracks = outro.audioTracks.map((t) => t.index);
-  return [
-    `[1:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${fmt(fps)},format=yuv420p[vout]`,
-    audioChain(1, outro, allTracks, 'aout'),
-  ];
-}
-
 export function buildFilterComplex(input: ExportArgsInput): string {
   const fps = pickOutputFps(input.source.fps);
+  const clipDuration = trimmedDuration(input.source.duration, input.trim ?? null);
+  const outro = input.outro;
+  const placement = outroPlacement(input.settings.outro?.mode);
+  // The outro's own tracks are always used; a silent one contributes generated silence.
+  const outroAudio = outro
+    ? audioChain(
+        1,
+        outro,
+        outro.audioTracks.map((t) => t.index),
+        'aout',
+      )
+    : null;
+  const overlay =
+    outro && placement === 'overlay'
+      ? overlayOutroChains(
+          outro,
+          fps,
+          clipDuration,
+          outro.audioTracks.length > 0 ? outroAudio : null,
+        )
+      : null;
+
   const chains = [
-    ...buildMainVideoChain(input, fps),
-    audioChain(
-      0,
-      input.source,
-      input.audio.exportTracks,
-      'amain',
-      trimmedDuration(input.source.duration, input.trim ?? null),
-    ),
+    ...buildMainVideoChain(input, fps, overlay?.video ?? []),
+    audioChain(0, input.source, input.audio.exportTracks, 'amain', clipDuration),
   ];
-  if (input.outro) {
-    chains.push(...buildOutroChains(input.outro, fps));
+
+  if (overlay) {
+    chains.push('[vmain]null[v]', ...overlay.audio);
+  } else if (outro && outroAudio) {
+    chains.push(...appendedOutroChains(fps, outroAudio));
     chains.push('[vmain][amain][vout][aout]concat=n=2:v=1:a=1[v][a]');
   } else {
     chains.push('[vmain]null[v]', '[amain]anull[a]');
@@ -147,13 +173,15 @@ export function buildExportArgs(input: ExportArgsInput): string[] {
   return args;
 }
 
-/** Total seconds the progress denominator should use. */
+/** Total seconds the progress denominator should use; an overlay outro adds no length. */
 export function totalOutputDuration(
   source: VideoInfo,
   outro: VideoInfo | null,
   trim: TrimRange | null = null,
+  placement: OutroPlacement = 'after',
 ): number {
-  return trimmedDuration(source.duration, trim) + (outro?.duration ?? 0);
+  const appended = outro && placement === 'after' ? outro.duration : 0;
+  return trimmedDuration(source.duration, trim) + appended;
 }
 
 /**
