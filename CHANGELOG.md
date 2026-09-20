@@ -12,6 +12,20 @@ All notable changes to this project are documented in this file. The format is b
 
 - Subtitle **vertical offset** (Style panel): shifts the text up or down from its position
   (bottom / centre / top) in output pixels; saved in presets like the other style options.
+- Subtitle **box padding** (horizontal / vertical): sizes the background box and the current-word
+  box independently of the text.
+- **Cut detection and per-segment layouts**: the Segments panel detects scene changes (three
+  sensitivities), cuts can be added at the playhead (`C`) or removed, and every segment is
+  rendered as Split or Fill. Cuts belong to the clip, not to a configuration.
+- Outro **placement**: "On top of the clip" composites a transparent outro over the last seconds
+  of the clip instead of appending it, keeping the export's length and mixing its audio in. The
+  preview shows it live through a transparent copy made when the outro is imported; the export
+  always reads the original file.
+
+### Changed
+
+- The Fill layout has its own gameplay rectangle, so switching layouts no longer refits the
+  Split one. Configurations saved earlier are migrated when they load.
 
 ### Fixed
 

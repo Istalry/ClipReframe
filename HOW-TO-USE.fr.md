@@ -61,9 +61,28 @@ Au centre : votre source. À droite : le résultat vertical, en direct.
 - Cliquez sur un rectangle pour le sélectionner ; une grille des tiers apparaît.
 - Le curseur **Webcam height** — ou la ligne violette dans l'aperçu — règle la part de la
   verticale occupée par la webcam (20 % à 60 %). Les rectangles se réajustent automatiquement.
-- **Layout → Fill** passe à un seul recadrage 9:16 du gameplay (sans bande webcam).
+- **Layout → Fill** passe à un seul recadrage 9:16 du gameplay (sans bande webcam). Chaque
+  disposition garde son propre rectangle de gameplay : passer de l'une à l'autre ne perd
+  jamais votre cadrage.
 
-Lecture : **Espace** lecture/pause · **← / →** ±1 s (**Maj** = ±5 s) · **M** couper le son · barre de défilement.
+Lecture : **Espace** lecture/pause · **← / →** ±1 s (**Maj** = ±5 s) · **M** couper le son · **C** couper au niveau de la tête de lecture · barre de défilement.
+
+### Segments (coupures)
+
+Un clip qui alterne les scènes peut utiliser une disposition différente selon le moment. Dans le
+panneau **Segments** :
+
+- **Detect cuts** analyse la vidéo et la découpe là où l'image change. _Low_ ne retient que les
+  coupures franches, _High_ aussi les plus douces ; si rien n'est trouvé, augmentez la
+  sensibilité.
+- **Add cut** (ou **C**) coupe le segment sous la tête de lecture en deux.
+- Chaque ligne affiche sa plage — cliquez pour vous y rendre — avec un sélecteur **Split / Fill**
+  et **✕** pour la fusionner avec le segment précédent. **Clear cuts** revient à un seul segment.
+- Les boutons de disposition et les rectangles s'appliquent toujours au segment sous la tête de
+  lecture ; l'aperçu le suit, comme l'export.
+
+Les coupures appartiennent au clip, pas aux préréglages : charger une autre vidéo repart d'un
+seul segment.
 
 ### Découpe
 
@@ -104,8 +123,10 @@ transférer sur un autre PC.
 6. **Style** : police (toutes celles installées), taille, gras/italique/majuscules, couleur, contour
    ou boîte de fond, ombre, position (bas / centre / haut) avec sa marge depuis le bord plus un
    **décalage vertical** pour ajuster finement vers le haut ou le bas, nombre maximal de
-   caractères par ligne (retour automatique). L'aperçu de droite reflète le résultat en direct
-   et tout est enregistré dans les préréglages comme les autres options.
+   caractères par ligne (retour automatique). Avec une boîte de fond ou un surlignage en boîte,
+   deux curseurs **box padding** (horizontal / vertical) agrandissent les boîtes autour du texte.
+   L'aperçu de droite reflète le résultat en direct et tout est enregistré dans les préréglages
+   comme les autres options.
 7. **Mot en cours** : met en valeur le mot prononcé — **Boîte** (par défaut, un rectangle derrière
    le mot), **Couleur du texte**, **Couleur du contour** (indisponible avec une boîte de
    fond) ou **Aucun** — avec la **couleur de surlignage** de votre choix. Les temps des mots
@@ -117,10 +138,21 @@ nécessaire sur TikTok et Shorts pour la lecture automatique sans son.
 
 ## 5. Outro / appel à l'action (optionnel)
 
-Déposez une vidéo verticale sur le panneau **Outro** ou cliquez sur **Choose outro…**. Elle est
-ajoutée telle quelle après le clip. Si elle n'est pas en 9:16 elle est encadrée de bandes noires,
-jamais déformée. Les sous-titres n'apparaissent jamais sur l'outro. L'outro est enregistré dans la
-configuration : un preset « Shorts » peut donc embarquer sa propre fin de vidéo.
+Déposez une vidéo verticale sur le panneau **Outro** ou cliquez sur **Choose outro…**, puis
+choisissez un **Placement** :
+
+- **After the clip** (par défaut) l'ajoute telle quelle après le clip, en letterbox si elle n'est
+  pas en 9:16, jamais déformée. Les sous-titres n'apparaissent pas dessus et elle n'est pas
+  visible dans l'aperçu.
+- **On top of the clip** l'incruste au contraire sur les dernières secondes du clip, sans changer
+  la durée de l'export — prévu pour un appel à l'action sur **fond transparent** (ProRes 4444,
+  WebM avec alpha…). Son propre son, s'il y en a, est mélangé. Les sous-titres restent au-dessus
+  et l'aperçu l'affiche en direct : l'application fabrique une petite copie transparente de
+  l'outro au premier import (une ligne de progression s'affiche dans le panneau) tandis que
+  l'export utilise le fichier d'origine.
+
+L'outro et son placement sont enregistrés dans la configuration : un preset « Shorts » peut donc
+porter sa propre carte de fin.
 
 L'application conserve sa **propre copie** de l'outro dans `%APPDATA%\ClipReframe\outros` : vous
 pouvez ensuite déplacer ou supprimer l'original. Les copies que plus aucune configuration

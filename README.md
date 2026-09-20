@@ -13,13 +13,17 @@ See **[HOW-TO-USE.md](HOW-TO-USE.md)** for the user guide (**[version française
 
 - Drag & drop a clip anywhere on the window, position the **webcam** and **gameplay** rectangles, watch the live 9:16 preview.
 - Trim: set in/out points at the playhead (`I` / `O`); the preview loops inside the range and only that part is exported.
-- Two layouts: **Split** (webcam on top, gameplay below, adjustable ratio) and **Fill** (one 9:16 crop).
+- Two layouts: **Split** (webcam on top, gameplay below, adjustable ratio) and **Fill** (one 9:16 crop), each with
+  its own gameplay rectangle.
+- Cut detection (ffmpeg `scdet`, three sensitivities): split the clip into segments — add or remove cuts by hand — and
+  give each one its own layout.
 - Save configurations, mark one as default (auto-applied on every new clip), delete the ones you no longer use.
 - Optional subtitles: offline speech-to-text (whisper.cpp `small` model, language auto-detected or fixed), automatic clean-up
   of Whisper hallucinations, editable cues, fully styled (font, size, colours, outline, box, position), current-word
-  highlight (box / text colour / outline colour) and burned in.
+  highlight (box / text colour / outline colour, adjustable box padding) and burned in.
 - Multi-track recordings (OBS mic / Discord / game): pick which tracks feed the subtitles and which are mixed into the export.
-- Optional call-to-action outro (drop or pick a vertical video) appended to every export.
+- Optional call-to-action outro (drop or pick a vertical video), appended after the clip or composited on top of its
+  last seconds for a transparent end card (shown live in the preview).
 - Export: single MP4 — H.264 High, yuv420p, AAC 48 kHz, `+faststart` — valid for both platforms; encoded on the GPU
   (NVENC / AMF / Quick Sync) when one works, x264 CRF 17 otherwise.
 

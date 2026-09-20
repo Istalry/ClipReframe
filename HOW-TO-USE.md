@@ -55,9 +55,25 @@ The centre shows your source; the right shows the vertical result live.
 - Click a rectangle to select it; a rule-of-thirds grid appears.
 - **Webcam height** slider — or drag the purple line in the preview — changes how much of the
   vertical frame the webcam gets (20 %–60 %). The rectangles re-fit automatically.
-- **Layout → Fill** switches to a single 9:16 crop of the gameplay (no webcam band).
+- **Layout → Fill** switches to a single 9:16 crop of the gameplay (no webcam band). Each layout
+  keeps its own gameplay rectangle, so switching back and forth never loses your framing.
 
-Playback: **Space** play/pause · **← / →** ±1 s (**Shift** = ±5 s) · **M** mute · drag the scrub bar.
+Playback: **Space** play/pause · **← / →** ±1 s (**Shift** = ±5 s) · **M** mute · **C** cut at the
+playhead · drag the scrub bar.
+
+### Segments (cuts)
+
+A clip that jumps between scenes can use a different layout per part. In the **Segments** panel:
+
+- **Detect cuts** analyses the video and splits it where the picture changes. _Low_ only catches
+  hard cuts, _High_ also catches softer ones; if nothing is found, raise the sensitivity.
+- **Add cut** (or **C**) splits the segment under the playhead in two.
+- Each segment row shows its range — click it to jump there — with a **Split / Fill** switch and
+  **✕** to merge it back into the previous one. **Clear cuts** returns to a single segment.
+- The layout buttons and the rectangles always apply to the segment under the playhead; the
+  preview follows it, exactly like the export does.
+
+Cuts belong to the clip, not to a configuration: loading another video starts from one segment.
 
 ### Trim
 
@@ -95,6 +111,8 @@ Presets live in `%APPDATA%\ClipReframe\presets.json`; copy that file to move the
    box, shadow, position (bottom / centre / top) with its margin from the edge plus a **vertical
    offset** to nudge the text up or down from there, max characters per line (auto-wrap). The
    preview on the right shows the result live and is saved with presets like every other option.
+   With a background box or a box highlight, two **box padding** sliders (horizontal / vertical)
+   make the boxes larger than the text.
 7. **Current word**: emphasise the word being spoken — **Box** (default, a rectangle behind
    it), **Text colour**, **Outline colour** (not offered with a background box) or **None** —
    and pick the **highlight colour**. Word timings come from speech recognition; a cue you edit
@@ -106,9 +124,18 @@ Shorts need for autoplay-without-sound.
 
 ## 5. Outro / call to action (optional)
 
-Drop a vertical video onto the **Outro** panel or click **Choose outro…**. It is appended
-unchanged after the clip. If it is not 9:16 it is letterboxed, never stretched. Subtitles never
-appear on the outro. The outro is saved in the configuration, so a "Shorts" preset can carry its
+Drop a vertical video onto the **Outro** panel or click **Choose outro…**, then pick a
+**Placement**:
+
+- **After the clip** (default) appends it unchanged, letterboxed if it is not 9:16, never
+  stretched. Subtitles do not appear on it, and it is not shown in the preview.
+- **On top of the clip** composites it over the last seconds of the clip instead, so the export
+  keeps its length — meant for a call to action with a **transparent background** (ProRes 4444,
+  WebM with alpha…). Its own audio, if any, is mixed in. Subtitles stay on top of it, and the
+  preview shows it live: the app renders a small transparent copy of the outro the first time it
+  is imported (a progress line appears in the panel) while the export uses the original file.
+
+The outro and its placement are saved in the configuration, so a "Shorts" preset can carry its
 own end card.
 
 The app keeps its **own copy** of the outro in `%APPDATA%\ClipReframe\outros`, so you can move or
