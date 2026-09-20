@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-20
+
 ### Added
 
 - Subtitle **vertical offset** (Style panel): shifts the text up or down from its position
@@ -67,6 +69,7 @@ First public release.
   one-click packaging; binaries pinned and checksum-verified at fetch time.
 - English and French user guides.
 
-[Unreleased]: https://github.com/Istalry/ClipReframe/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Istalry/ClipReframe/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Istalry/ClipReframe/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Istalry/ClipReframe/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Istalry/ClipReframe/releases/tag/v0.1.0
