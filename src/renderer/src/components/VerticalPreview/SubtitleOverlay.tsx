@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 import { wrapWords } from '@shared/subtitles/ass';
-import { BOX_PADDING, effectiveMarginV } from '@shared/subtitles/ass-format';
-import { effectiveHighlightMode, pillPadding } from '@shared/subtitles/ass-highlight';
+import { boxPadding, effectiveMarginV } from '@shared/subtitles/ass-format';
+import { effectiveHighlightMode } from '@shared/subtitles/ass-highlight';
 import { findActiveCue, findActiveWordIndex, getCueWords } from '@shared/subtitles/cues';
 import type { SubtitleCue, SubtitleHighlightMode, SubtitleStyle } from '@shared/types';
 
@@ -16,10 +16,13 @@ interface SubtitleOverlayProps {
   scale: number;
 }
 
+/** Opacity of the background box; the ASS style uses the matching alpha. */
+const BOX_OPACITY = 0.8;
+
 /**
  * CSS for the word being spoken, mirroring the ASS overrides. The box is a sharp rectangle like
  * libass draws, with a negative margin cancelling its padding so the line keeps exactly the
- * layout of the un-highlighted text.
+ * layout of the un-highlighted text; inline vertical padding overflows the line box like libass.
  */
 function highlightStyle(
   mode: SubtitleHighlightMode,
@@ -46,8 +49,10 @@ function highlightStyle(
 
 /**
  * DOM approximation of the burned-in ASS style. Sizes follow libass conventions: the font size
- * is ascent + descent (see `useLibassFontScale`), lines are exactly that tall and boxes pad in
- * output pixels, so position, size, colours and wrapping match the export closely.
+ * is ascent + descent (see `useLibassFontScale`), lines are exactly that tall whatever the box
+ * padding (boxes overflow, and the outer one overflows the margin), and boxes pad in output
+ * pixels. Like the ASS layers, boxes that must sit under every glyph are drawn on invisible
+ * copies of the text behind the real one — same metrics, so they line up.
  */
 export function SubtitleOverlay({
   cues,
@@ -66,28 +71,21 @@ export function SubtitleOverlay({
   const lineOffsets = lines.map((_, i) => lines.slice(0, i).reduce((n, l) => n + l.length, 0));
   const highlight = effectiveHighlightMode(style);
   const activeIndex = highlight === 'none' ? -1 : findActiveWordIndex(cue, currentTime);
-  // libass makes each line as tall as the font size plus the box padding, and lets the outer
-  // box overflow the margin by that padding.
-  const boxPadY = style.backgroundBox ? BOX_PADDING.y : 0;
+  const pad = boxPadding(style);
   const activeStyle = highlightStyle(highlight, style.highlightColor, {
-    x: (style.backgroundBox ? BOX_PADDING.x : pillPadding(style.fontSize)) * scale,
-    y: boxPadY * scale,
+    x: pad.x * scale,
+    y: pad.y * scale,
   });
   // A CSS stroke is centred on the glyph edge and the fill paints over its inner half, whereas
   // libass grows the outline outward; doubling keeps the visible thickness equal.
   const outline = 2 * style.outlineWidth * scale;
-  const lineHeight = (style.fontSize + 2 * boxPadY) * scale;
-  const margin = (effectiveMarginV(style) - boxPadY) * scale;
-
-  // libass centres a block of n × font height, ignoring the box padding it then adds between
-  // the lines, so a centred multi-line box sits (n - 1) × padding lower than a true centring.
-  const centreShift = (style.offsetY + (lines.length - 1) * boxPadY) * scale;
+  const margin = effectiveMarginV(style) * scale;
 
   const position: CSSProperties =
     style.alignment === 'top'
       ? { top: margin }
       : style.alignment === 'center'
-        ? { top: `calc(50% + ${centreShift}px)`, transform: 'translateY(-50%)' }
+        ? { top: `calc(50% + ${style.offsetY * scale}px)`, transform: 'translateY(-50%)' }
         : { bottom: margin };
 
   const textStyle: CSSProperties = {
@@ -96,7 +94,9 @@ export function SubtitleOverlay({
     fontWeight: style.bold ? 700 : 400,
     fontStyle: style.italic ? 'italic' : 'normal',
     color: style.primaryColor,
-    lineHeight: `${lineHeight}px`,
+    lineHeight: `${style.fontSize * scale}px`,
+    // Lines are explicit blocks; padded boxes must not re-wrap them.
+    whiteSpace: 'nowrap',
     ...(style.backgroundBox
       ? {}
       : {
@@ -108,36 +108,68 @@ export function SubtitleOverlay({
               : undefined,
         }),
   };
-  // libass draws one box per line, padded around the glyph run.
-  const lineStyle: CSSProperties = style.backgroundBox
-    ? {
-        background: `${style.backgroundColor}cc`,
-        padding: `${BOX_PADDING.y * scale}px ${BOX_PADDING.x * scale}px`,
-        boxDecorationBreak: 'clone',
-        WebkitBoxDecorationBreak: 'clone',
-      }
-    : {};
+  // An invisible copy of the text: same layout, only the boxes it carries are painted.
+  const layerStyle: CSSProperties = {
+    ...textStyle,
+    position: 'absolute',
+    inset: 0,
+    color: 'transparent',
+    WebkitTextStroke: undefined,
+    textShadow: undefined,
+  };
+  // libass draws one box per line, padded around the glyph run; overlapping lines merge, hence
+  // opaque boxes on a translucent layer rather than translucent boxes.
+  const lineBoxStyle: CSSProperties = {
+    background: style.backgroundColor,
+    padding: `${pad.y * scale}px ${pad.x * scale}px`,
+    boxDecorationBreak: 'clone',
+    WebkitBoxDecorationBreak: 'clone',
+  };
+  // Under an outlined base the pill sits below every glyph; on a box base it sits on top.
+  const pillUnderneath = highlight === 'box' && !style.backgroundBox;
+
+  const renderLines = (
+    lineStyle: CSSProperties | undefined,
+    active: CSSProperties | undefined,
+  ): ReactNode =>
+    lines.map((line, i) => (
+      <span key={i} className="block">
+        <span style={lineStyle}>
+          {line.map((word, j) => (
+            <span key={j}>
+              {j > 0 && ' '}
+              <span style={(lineOffsets[i] ?? 0) + j === activeIndex ? active : undefined}>
+                {word}
+              </span>
+            </span>
+          ))}
+        </span>
+      </span>
+    ));
 
   return (
     <div
       className="pointer-events-none absolute right-0 left-0 flex justify-center px-[4%] text-center"
       style={position}
     >
-      <span style={textStyle}>
-        {lines.map((line, i) => (
-          <span key={i} className="block">
-            <span style={lineStyle}>
-              {line.map((word, j) => (
-                <span key={j}>
-                  {j > 0 && ' '}
-                  <span style={(lineOffsets[i] ?? 0) + j === activeIndex ? activeStyle : undefined}>
-                    {word}
-                  </span>
-                </span>
-              ))}
-            </span>
+      <span
+        className="relative inline-block"
+        // Room for the line boxes: an overflowing centred line would start-align instead.
+        style={{ padding: `0 ${style.backgroundBox ? pad.x * scale : 0}px` }}
+      >
+        {style.backgroundBox && (
+          <span aria-hidden style={{ ...layerStyle, opacity: BOX_OPACITY }}>
+            {renderLines(lineBoxStyle, undefined)}
           </span>
-        ))}
+        )}
+        {pillUnderneath && (
+          <span aria-hidden style={layerStyle}>
+            {renderLines(undefined, activeStyle)}
+          </span>
+        )}
+        <span className="relative" style={textStyle}>
+          {renderLines(undefined, pillUnderneath ? undefined : activeStyle)}
+        </span>
       </span>
     </div>
   );

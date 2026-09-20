@@ -4,10 +4,13 @@ import type { SubtitleStyle } from '../types';
 import { splitWords } from './text';
 
 /**
- * Padding of the background box around each line, in output pixels — the same values the
- * preview uses. `y` goes in the style's Outline field; `x` needs a per-event `\\xbord` override.
+ * Padding of the boxes (background box around each line, pill behind the current word) in
+ * output pixels. `y` goes in the style's Outline field; `x` needs a per-event `\\xbord` override.
  */
-export const BOX_PADDING = { x: 10, y: 4 } as const;
+export const boxPadding = (style: SubtitleStyle): { x: number; y: number } => ({
+  x: style.boxPaddingX,
+  y: style.boxPaddingY,
+});
 
 /** Alpha of the background box (ASS alpha, 00 = opaque): ~80 % opaque like the preview's `cc`. */
 export const BOX_ALPHA = 0x33;
@@ -32,7 +35,7 @@ export function effectiveMarginV(style: SubtitleStyle): number {
 export function eventPrefix(style: SubtitleStyle): string {
   const tags: string[] = [];
   if (style.backgroundBox) {
-    tags.push(`\\xbord${BOX_PADDING.x}`);
+    tags.push(`\\xbord${style.boxPaddingX}`);
   }
   if (style.alignment === 'center' && style.offsetY !== 0) {
     tags.push(`\\pos(${OUTPUT_WIDTH / 2},${OUTPUT_HEIGHT / 2 + style.offsetY})`);

@@ -16,6 +16,8 @@ const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Expected #rrggbb');
 export const SUBTITLE_HIGHLIGHT_MODES = ['none', 'color', 'outline', 'box'] as const;
 export const DEFAULT_HIGHLIGHT_MODE: SubtitleHighlightMode = 'box';
 export const DEFAULT_HIGHLIGHT_COLOR = '#a970ff';
+/** Padding of the subtitle boxes in output pixels; the pre-0.1.2 fixed values. */
+export const DEFAULT_BOX_PADDING = { x: 10, y: 4 } as const;
 
 export const rectSchema = z.object({ x: unit, y: unit, width: unit, height: unit });
 
@@ -39,6 +41,8 @@ export const subtitleStyleSchema = z.object({
   highlightColor: hexColor.default(DEFAULT_HIGHLIGHT_COLOR),
   // Added in 0.1.2.
   offsetY: z.number().int().min(-960).max(960).default(0),
+  boxPaddingX: z.number().int().min(0).max(60).default(DEFAULT_BOX_PADDING.x),
+  boxPaddingY: z.number().int().min(0).max(40).default(DEFAULT_BOX_PADDING.y),
 }) satisfies z.ZodType<SubtitleStyle>;
 
 export const subtitleSettingsSchema = z.object({
@@ -89,6 +93,8 @@ export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
   alignment: 'bottom',
   marginV: 260,
   offsetY: 0,
+  boxPaddingX: DEFAULT_BOX_PADDING.x,
+  boxPaddingY: DEFAULT_BOX_PADDING.y,
   maxLineChars: 32,
   uppercase: false,
   highlightMode: DEFAULT_HIGHLIGHT_MODE,

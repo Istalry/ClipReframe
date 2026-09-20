@@ -180,6 +180,32 @@ export function StyleEditor(): ReactNode {
           />
         </Field>
       )}
+      {(style.backgroundBox || style.highlightMode === 'box') && (
+        <>
+          <Field label="Box padding — horizontal">
+            <Slider
+              value={style.boxPaddingX}
+              min={0}
+              max={60}
+              onChange={(boxPaddingX) => {
+                updateStyle({ boxPaddingX });
+              }}
+              format={(v) => `${v}px`}
+            />
+          </Field>
+          <Field label="Box padding — vertical">
+            <Slider
+              value={style.boxPaddingY}
+              min={0}
+              max={40}
+              onChange={(boxPaddingY) => {
+                updateStyle({ boxPaddingY });
+              }}
+              format={(v) => `${v}px`}
+            />
+          </Field>
+        </>
+      )}
       <Field label="Position">
         <Select
           value={style.alignment}

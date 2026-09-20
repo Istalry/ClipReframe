@@ -10,9 +10,6 @@ export function effectiveHighlightMode(style: SubtitleStyle): SubtitleHighlightM
   return style.highlightMode === 'outline' && style.backgroundBox ? 'none' : style.highlightMode;
 }
 
-/** Horizontal padding of the pill behind the current word, in output pixels (preview and export). */
-export const pillPadding = (fontSize: number): number => Math.round(fontSize * 0.18);
-
 /** Name of the extra ASS style the `box` highlight draws its pill with. */
 export const PILL_STYLE = 'Pill';
 
@@ -88,10 +85,11 @@ export function buildHighlightEvents(
   // Both layers of the box mode share the prefix so they land on the same spot.
   const prefix = eventPrefix(style);
   const plain: WordTags = { prefix, open: '', close: '' };
+  // Per-event borders only grow the pill; the text layer's line pitch stays untouched.
   const pill: WordTags = {
     prefix: style.backgroundBox
       ? `{\\alpha&HFF&}${prefix}`
-      : `{\\alpha&HFF&\\xbord${pillPadding(style.fontSize)}\\ybord0}${prefix}`,
+      : `{\\alpha&HFF&\\xbord${style.boxPaddingX}\\ybord${style.boxPaddingY}}${prefix}`,
     open: '{\\alpha&H00&}',
     close: INVISIBLE,
   };

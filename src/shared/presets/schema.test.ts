@@ -28,6 +28,15 @@ describe('projectSettingsSchema', () => {
     expect(parsed.subtitles.style.highlightMode).toBe('box');
     expect(parsed.subtitles.style.highlightColor).toBe('#a970ff');
     expect(parsed.subtitles.style.offsetY).toBe(0);
+    expect([parsed.subtitles.style.boxPaddingX, parsed.subtitles.style.boxPaddingY]).toEqual([
+      10, 4,
+    ]);
+    expect(
+      projectSettingsSchema.safeParse({
+        ...s,
+        subtitles: { ...s.subtitles, style: { ...s.subtitles.style, boxPaddingX: 61 } },
+      }).success,
+    ).toBe(false);
     expect(
       projectSettingsSchema.safeParse({
         ...s,

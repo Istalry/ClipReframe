@@ -192,7 +192,7 @@ describe('buildAss with a word highlight', () => {
     const lines = dialogues(ass);
     expect(lines).toHaveLength(6);
     expect(lines[2]).toBe(
-      'Dialogue: 0,0:00:02.00,0:00:03.00,Pill,,0,0,0,,{\\alpha&HFF&\\xbord12\\ybord0}un {\\alpha&H00&}deux{\\alpha&HFF&} trois',
+      'Dialogue: 0,0:00:02.00,0:00:03.00,Pill,,0,0,0,,{\\alpha&HFF&\\xbord10\\ybord4}un {\\alpha&H00&}deux{\\alpha&HFF&} trois',
     );
     expect(lines[3]).toBe('Dialogue: 1,0:00:02.00,0:00:03.00,Default,,0,0,0,,un deux trois');
   });
@@ -220,6 +220,27 @@ describe('buildAss with a word highlight', () => {
     );
   });
 
+  it('applies the box padding to the line box and to the pill', () => {
+    const padded = { ...PLAIN, highlightMode: 'box' as const, boxPaddingX: 24, boxPaddingY: 12 };
+    const outlined = buildAss([cue], padded);
+    expect(styles(outlined)[1]?.split(',').slice(15, 17)).toEqual(['3', '12']);
+    expect(dialogues(outlined)[2]).toContain('Pill,,0,0,0,,{\\alpha&HFF&\\xbord24\\ybord12}un ');
+
+    const boxed = buildAss([cue], { ...padded, backgroundBox: true });
+    expect(styles(boxed).map((l) => l.split(',')[16])).toEqual(['12', '12']);
+    expect(dialogues(boxed)[2]).toContain('Default,,0,0,0,,{\\xbord24}un deux trois');
+    expect(dialogues(boxed)[3]).toContain('Pill,,0,0,0,,{\\alpha&HFF&}{\\xbord24}un ');
+
+    const flat = buildAss([cue], {
+      ...padded,
+      backgroundBox: true,
+      boxPaddingX: 0,
+      boxPaddingY: 0,
+    });
+    expect(styles(flat)[0]?.split(',')[16]).toBe('0');
+    expect(dialogues(flat)[2]).toContain('Default,,0,0,0,,{\\xbord0}un deux trois');
+  });
+
   it('emits no extra styles for the other modes', () => {
     for (const highlightMode of ['none', 'color', 'outline'] as const) {
       expect(styles(buildAss([cue], { ...PLAIN, highlightMode }))).toHaveLength(1);
@@ -241,7 +262,7 @@ describe('buildAss with a word highlight', () => {
       'Dialogue: 0,0:00:01.00,0:00:04.00,Default,,0,0,0,,{\\pos(540,840)}un deux trois',
     ]);
     const lines = dialogues(buildAss([cue], { ...centred, highlightMode: 'box' }));
-    expect(lines[2]).toContain('Pill,,0,0,0,,{\\alpha&HFF&\\xbord12\\ybord0}{\\pos(540,840)}un ');
+    expect(lines[2]).toContain('Pill,,0,0,0,,{\\alpha&HFF&\\xbord10\\ybord4}{\\pos(540,840)}un ');
     expect(lines[3]).toContain('Default,,0,0,0,,{\\pos(540,840)}un deux trois');
     expect(dialogues(buildAss([cue], { ...centred, offsetY: 0 }))[0]).toContain(',,un deux trois');
   });

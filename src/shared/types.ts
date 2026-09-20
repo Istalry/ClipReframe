@@ -75,6 +75,9 @@ export interface SubtitleStyle {
   marginV: number;
   /** Extra vertical shift in output pixels, positive = down, applied on top of the alignment. */
   offsetY: number;
+  /** Padding of the background box and of the current-word box, in output pixels. */
+  boxPaddingX: number;
+  boxPaddingY: number;
   /** Soft-wrap cues longer than this many characters. */
   maxLineChars: number;
   uppercase: boolean;

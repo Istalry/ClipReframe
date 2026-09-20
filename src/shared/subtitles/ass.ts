@@ -3,7 +3,6 @@ import type { SubtitleAlignment, SubtitleCue, SubtitleStyle } from '../types';
 
 import {
   BOX_ALPHA,
-  BOX_PADDING,
   dialogueLine,
   effectiveMarginV,
   escapeAssText,
@@ -52,7 +51,7 @@ export function buildAssStyleLine(
     0, // Spacing
     0, // Angle
     borderStyle,
-    style.backgroundBox ? BOX_PADDING.y : style.outlineWidth,
+    style.backgroundBox ? style.boxPaddingY : style.outlineWidth,
     style.shadow,
     ALIGNMENT_CODE[style.alignment],
     40, // MarginL
