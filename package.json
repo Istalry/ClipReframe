@@ -1,6 +1,6 @@
 {
   "name": "clipreframe",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Reframe 16:9 gameplay + webcam clips into 9:16 vertical videos for TikTok and YouTube Shorts.",
   "main": "./out/main/index.js",
   "author": "Istalry",

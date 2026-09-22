@@ -291,6 +291,18 @@ describe('outro placement', () => {
     expect(withOutro('after')).toBe(buildFilterComplex({ ...base(), outro }));
   });
 
+  it('composites a transparent appended outro over black', () => {
+    const graph = withOutro('after', { outro: { ...outro, pixelFormat: 'yuva444p12le' } });
+    expect(graph).toContain('format=yuva420p,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black@0');
+    expect(graph).toContain('premultiply=inplace=1,format=yuv420p[vout]');
+  });
+
+  it('leaves an opaque appended outro alone', () => {
+    expect(withOutro('after', { outro: { ...outro, pixelFormat: 'yuv420p' } })).not.toContain(
+      'premultiply',
+    );
+  });
+
   it('composites a silent outro over the end of the clip without touching the audio', () => {
     const graph = withOutro('overlay');
     expect(graph).toContain('[stacked]fps=60,format=yuv420p[base]');

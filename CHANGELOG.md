@@ -6,6 +6,16 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-22
+
+### Fixed
+
+- An outro appended with **After the clip** is composited over black with its alpha channel
+  instead of having that channel dropped. A transparent outro carries undefined colours where it
+  is invisible, so dropping the alpha painted that residue at full opacity: an end card that fades
+  out stayed opaque to the last frame and then popped, with wrong colours. The overlay placement
+  and opaque outros are unaffected.
+
 ## [0.1.2] - 2026-09-20
 
 ### Added
@@ -83,7 +93,8 @@ First public release.
   one-click packaging; binaries pinned and checksum-verified at fetch time.
 - English and French user guides.
 
-[Unreleased]: https://github.com/Istalry/ClipReframe/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/Istalry/ClipReframe/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/Istalry/ClipReframe/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Istalry/ClipReframe/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Istalry/ClipReframe/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Istalry/ClipReframe/releases/tag/v0.1.0

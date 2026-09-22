@@ -12,6 +12,7 @@ import type {
 import { encoderArgs, type VideoEncoder } from './encoders';
 import { fmt } from './format';
 import { appendedOutroChains, outroPlacement, overlayOutroChains } from './outro-chains';
+import { hasAlphaChannel } from './pixel-format';
 import { trimmedDuration } from './trim';
 import { buildSegmentChains } from './video-chain';
 
@@ -127,7 +128,7 @@ export function buildFilterComplex(input: ExportArgsInput): string {
   if (overlay) {
     chains.push('[vmain]null[v]', ...overlay.audio);
   } else if (outro && outroAudio) {
-    chains.push(...appendedOutroChains(fps, outroAudio));
+    chains.push(...appendedOutroChains(fps, outroAudio, hasAlphaChannel(outro.pixelFormat)));
     chains.push('[vmain][amain][vout][aout]concat=n=2:v=1:a=1[v][a]');
   } else {
     chains.push('[vmain]null[v]', '[amain]anull[a]');

@@ -128,7 +128,8 @@ Drop a vertical video onto the **Outro** panel or click **Choose outro…**, the
 **Placement**:
 
 - **After the clip** (default) appends it unchanged, letterboxed if it is not 9:16, never
-  stretched. Subtitles do not appear on it, and it is not shown in the preview.
+  stretched. A transparent outro is composited over black, so an end card that fades out fades
+  here too. Subtitles do not appear on it, and it is not shown in the preview.
 - **On top of the clip** composites it over the last seconds of the clip instead, so the export
   keeps its length — meant for a call to action with a **transparent background** (ProRes 4444,
   WebM with alpha…). Its own audio, if any, is mixed in. Subtitles stay on top of it, and the

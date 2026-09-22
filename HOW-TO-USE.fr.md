@@ -142,8 +142,9 @@ Déposez une vidéo verticale sur le panneau **Outro** ou cliquez sur **Choose o
 choisissez un **Placement** :
 
 - **After the clip** (par défaut) l'ajoute telle quelle après le clip, en letterbox si elle n'est
-  pas en 9:16, jamais déformée. Les sous-titres n'apparaissent pas dessus et elle n'est pas
-  visible dans l'aperçu.
+  pas en 9:16, jamais déformée. Une outro transparente est composée sur du noir : une carte de fin
+  qui se termine en fondu garde son fondu. Les sous-titres n'apparaissent pas dessus et elle n'est
+  pas visible dans l'aperçu.
 - **On top of the clip** l'incruste au contraire sur les dernières secondes du clip, sans changer
   la durée de l'export — prévu pour un appel à l'action sur **fond transparent** (ProRes 4444,
   WebM avec alpha…). Son propre son, s'il y en a, est mélangé. Les sous-titres restent au-dessus
